@@ -77,7 +77,8 @@ public abstract class Chart<TDrawingContext> : IChart
     protected Chart(
         MotionCanvas<TDrawingContext> canvas,
         Action<LiveChartsSettings> defaultPlatformConfig,
-        IChartView view)
+        IChartView view
+    )
     {
         Canvas = canvas;
         canvas.Validated += OnCanvasValidated;
@@ -85,12 +86,18 @@ public abstract class Chart<TDrawingContext> : IChart
         LiveCharts.Configure(defaultPlatformConfig);
 
         _updateThrottler = view.DesignerMode
-                ? new ActionThrottler(() => Task.CompletedTask, TimeSpan.FromMilliseconds(50))
-                : new ActionThrottler(UpdateThrottlerUnlocked, TimeSpan.FromMilliseconds(50));
+            ? new ActionThrottler(() => Task.CompletedTask, TimeSpan.FromMilliseconds(50))
+            : new ActionThrottler(UpdateThrottlerUnlocked, TimeSpan.FromMilliseconds(50));
         _updateThrottler.ThrottlerTimeSpan = view.UpdaterThrottler;
 
-        _tooltipThrottler = new ActionThrottler(TooltipThrottlerUnlocked, TimeSpan.FromMilliseconds(50));
-        _panningThrottler = new ActionThrottler(PanningThrottlerUnlocked, TimeSpan.FromMilliseconds(30));
+        _tooltipThrottler = new ActionThrottler(
+            TooltipThrottlerUnlocked,
+            TimeSpan.FromMilliseconds(50)
+        );
+        _panningThrottler = new ActionThrottler(
+            PanningThrottlerUnlocked,
+            TimeSpan.FromMilliseconds(30)
+        );
 
 #if NET5_0_OR_GREATER
 
@@ -178,7 +185,8 @@ public abstract class Chart<TDrawingContext> : IChart
     /// <summary>
     /// The series context
     /// </summary>
-    public SeriesContext<TDrawingContext> SeriesContext { get; protected set; } = new(Enumerable.Empty<IChartSeries<TDrawingContext>>(), null!);
+    public SeriesContext<TDrawingContext> SeriesContext { get; protected set; } =
+        new(Enumerable.Empty<IChartSeries<TDrawingContext>>(), null!);
 
     /// <summary>
     /// Gets the size of the control.
@@ -278,7 +286,8 @@ public abstract class Chart<TDrawingContext> : IChart
     {
         chartUpdateParams ??= new ChartUpdateParams();
 
-        if (chartUpdateParams.IsAutomaticUpdate && !View.AutoUpdateEnabled) return;
+        if (chartUpdateParams.IsAutomaticUpdate && !View.AutoUpdateEnabled)
+            return;
 
         _updateThrottler.ThrottlerTimeSpan = View.UpdaterThrottler;
 
@@ -328,30 +337,35 @@ public abstract class Chart<TDrawingContext> : IChart
 
         lock (Canvas.Sync)
         {
-            if (_isMobile) _isTooltipCanceled = false;
+            if (_isMobile)
+                _isTooltipCanceled = false;
 
             var strategy = VisibleSeries.GetTooltipFindingStrategy();
 
             // fire the series event.
             foreach (var series in VisibleSeries)
             {
-                if (!series.RequiresFindClosestOnPointerDown) continue;
+                if (!series.RequiresFindClosestOnPointerDown)
+                    continue;
 
                 var points = series.FindHitPoints(this, point, strategy);
-                if (!points.Any()) continue;
+                if (!points.Any())
+                    continue;
 
                 series.OnDataPointerDown(View, points, point);
             }
 
             // fire the chart event.
-            var iterablePoints = VisibleSeries.SelectMany(x => x.FindHitPoints(this, point, strategy));
+            var iterablePoints = VisibleSeries.SelectMany(x =>
+                x.FindHitPoints(this, point, strategy)
+            );
             View.OnDataPointerDown(iterablePoints, point);
 
             // fire the visual elements event.
-            var hitElements =
-                _everMeasuredElements.OfType<VisualElement<TDrawingContext>>()
-                    .Cast<VisualElement<TDrawingContext>>()
-                    .SelectMany(x => x.IsHitBy(this, point));
+            var hitElements = _everMeasuredElements
+                .OfType<VisualElement<TDrawingContext>>()
+                .Cast<VisualElement<TDrawingContext>>()
+                .SelectMany(x => x.IsHitBy(this, point));
 
             foreach (var ve in hitElements)
                 ve.InvokePointerDown(new VisualElementEventArgs<TDrawingContext>(this, ve, point));
@@ -366,7 +380,8 @@ public abstract class Chart<TDrawingContext> : IChart
         _isPointerIn = true;
         _tooltipThrottler.Call();
 
-        if (!_isPanning) return;
+        if (!_isPanning)
+            return;
         _pointerPanningPosition = point;
         _panningThrottler.Call();
     }
@@ -383,7 +398,8 @@ public abstract class Chart<TDrawingContext> : IChart
             View.InvokeOnUIThread(CloseTooltip);
         }
 
-        if (!_isPanning) return;
+        if (!_isPanning)
+            return;
         _isPanning = false;
         _pointerPanningPosition = point;
         _panningThrottler.Call();
@@ -460,7 +476,8 @@ public abstract class Chart<TDrawingContext> : IChart
     /// <returns></returns>
     protected bool SizeChanged()
     {
-        return _previousSize.Width != ControlSize.Width || _previousSize.Height != ControlSize.Height;
+        return _previousSize.Width != ControlSize.Width
+            || _previousSize.Height != ControlSize.Height;
     }
 
     /// <summary>
@@ -532,7 +549,8 @@ public abstract class Chart<TDrawingContext> : IChart
     public LvcPoint GetLegendPosition()
     {
         var actualChartSize = ControlSize;
-        float x = 0f, y = 0f;
+        float x = 0f,
+            y = 0f;
 
         if (LegendPosition == LegendPosition.Top)
         {
@@ -590,16 +608,26 @@ public abstract class Chart<TDrawingContext> : IChart
     /// <param name="rs">The right margin.</param>
     protected void DrawLegend(ref float ts, ref float bs, ref float ls, ref float rs)
     {
-        if (Legend is null || LegendPosition == LegendPosition.Hidden) return;
+        // TODO: part 2.1
+        if (Legend is null || LegendPosition == LegendPosition.Hidden)
+            return;
 
         _legendSize = Legend.Measure(this);
 
         switch (LegendPosition)
         {
-            case LegendPosition.Top: ts += _legendSize.Height; break;
-            case LegendPosition.Left: ls += _legendSize.Width; break;
-            case LegendPosition.Right: rs += _legendSize.Width; break;
-            case LegendPosition.Bottom: bs += _legendSize.Height; break;
+            case LegendPosition.Top:
+                ts += _legendSize.Height;
+                break;
+            case LegendPosition.Left:
+                ls += _legendSize.Width;
+                break;
+            case LegendPosition.Right:
+                rs += _legendSize.Width;
+                break;
+            case LegendPosition.Bottom:
+                bs += _legendSize.Height;
+                break;
             case LegendPosition.Hidden:
             default:
                 break;
@@ -617,9 +645,15 @@ public abstract class Chart<TDrawingContext> : IChart
         var x = _pointerPosition.X;
         var y = _pointerPosition.Y;
 
-        if (Tooltip is null || TooltipPosition == TooltipPosition.Hidden || !_isPointerIn ||
-            x < DrawMarginLocation.X || x > DrawMarginLocation.X + DrawMarginSize.Width ||
-            y < DrawMarginLocation.Y || y > DrawMarginLocation.Y + DrawMarginSize.Height)
+        if (
+            Tooltip is null
+            || TooltipPosition == TooltipPosition.Hidden
+            || !_isPointerIn
+            || x < DrawMarginLocation.X
+            || x > DrawMarginLocation.X + DrawMarginSize.Width
+            || y < DrawMarginLocation.Y
+            || y > DrawMarginLocation.Y + DrawMarginSize.Height
+        )
         {
             return;
         }
@@ -637,7 +671,8 @@ public abstract class Chart<TDrawingContext> : IChart
 
         CleanHoveredPoints(o);
 
-        if (isEmpty) return;
+        if (isEmpty)
+            return;
 
         Tooltip?.Show(points, this);
         _isToolTipOpen = true;
@@ -647,7 +682,8 @@ public abstract class Chart<TDrawingContext> : IChart
     {
         foreach (var point in _activePoints.Keys.ToArray())
         {
-            if (_activePoints[point] == comparer) continue; // the points was used, don't remove it.
+            if (_activePoints[point] == comparer)
+                continue; // the points was used, don't remove it.
 
             point.Context.Series.OnPointerLeft(point);
             _ = _activePoints.Remove(point);
@@ -656,39 +692,56 @@ public abstract class Chart<TDrawingContext> : IChart
 
     private Task TooltipThrottlerUnlocked()
     {
-        return Task.Run(() =>
-             View.InvokeOnUIThread(() =>
-             {
-                 lock (Canvas.Sync)
-                 {
-                     if (_isTooltipCanceled) return;
-                     DrawToolTip();
-                     Canvas.Invalidate();
-                 }
-             }));
+        return Task.Run(
+            () =>
+                View.InvokeOnUIThread(() =>
+                {
+                    lock (Canvas.Sync)
+                    {
+                        if (_isTooltipCanceled)
+                            return;
+                        DrawToolTip();
+                        Canvas.Invalidate();
+                    }
+                })
+        );
     }
 
     private Task PanningThrottlerUnlocked()
     {
-        return Task.Run(() =>
-            View.InvokeOnUIThread(() =>
-            {
-                if (this is not CartesianChart<TDrawingContext> cartesianChart) return;
-
-                lock (Canvas.Sync)
+        return Task.Run(
+            () =>
+                View.InvokeOnUIThread(() =>
                 {
-                    var dx = _pointerPanningPosition.X - _pointerPreviousPanningPosition.X;
-                    var dy = _pointerPanningPosition.Y - _pointerPreviousPanningPosition.Y;
+                    if (this is not CartesianChart<TDrawingContext> cartesianChart)
+                        return;
 
-                    // we need to send a dummy value indicating the direction (val > 0)
-                    // so the core is able to bounce the panning when the user reaches the limit.
-                    if (dx == 0) dx = _pointerPanningStartPosition.X - _pointerPanningPosition.X > 0 ? -0.01f : 0.01f;
-                    if (dy == 0) dy = _pointerPanningStartPosition.Y - _pointerPanningPosition.Y > 0 ? -0.01f : 0.01f;
+                    lock (Canvas.Sync)
+                    {
+                        var dx = _pointerPanningPosition.X - _pointerPreviousPanningPosition.X;
+                        var dy = _pointerPanningPosition.Y - _pointerPreviousPanningPosition.Y;
 
-                    cartesianChart.Pan(new LvcPoint(dx, dy), _isPanning);
-                    _pointerPreviousPanningPosition = new LvcPoint(_pointerPanningPosition.X, _pointerPanningPosition.Y);
-                }
-            }));
+                        // we need to send a dummy value indicating the direction (val > 0)
+                        // so the core is able to bounce the panning when the user reaches the limit.
+                        if (dx == 0)
+                            dx =
+                                _pointerPanningStartPosition.X - _pointerPanningPosition.X > 0
+                                    ? -0.01f
+                                    : 0.01f;
+                        if (dy == 0)
+                            dy =
+                                _pointerPanningStartPosition.Y - _pointerPanningPosition.Y > 0
+                                    ? -0.01f
+                                    : 0.01f;
+
+                        cartesianChart.Pan(new LvcPoint(dx, dy), _isPanning);
+                        _pointerPreviousPanningPosition = new LvcPoint(
+                            _pointerPanningPosition.X,
+                            _pointerPanningPosition.Y
+                        );
+                    }
+                })
+        );
     }
 
     private void CloseTooltip()
@@ -699,8 +752,10 @@ public abstract class Chart<TDrawingContext> : IChart
 
         if (this is CartesianChart<TDrawingContext> cartesianChart)
         {
-            foreach (var ax in cartesianChart.XAxes) ax.ClearCrosshair(cartesianChart);
-            foreach (var ay in cartesianChart.YAxes) ay.ClearCrosshair(cartesianChart);
+            foreach (var ax in cartesianChart.XAxes)
+                ax.ClearCrosshair(cartesianChart);
+            foreach (var ay in cartesianChart.YAxes)
+                ay.ClearCrosshair(cartesianChart);
         }
     }
 

@@ -56,7 +56,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The draw margin frame builder.
     /// </value>
-    public List<Action<DrawMarginFrame<TDrawingContext>>> DrawMarginFrameBuilder { get; set; } = new();
+    public List<Action<DrawMarginFrame<TDrawingContext>>> DrawMarginFrameBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the series builder.
@@ -96,7 +97,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<ICartesianSeries<TDrawingContext>>> CartesianSeriesBuilder { get; set; } = new();
+    public List<Action<ICartesianSeries<TDrawingContext>>> CartesianSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the stepline series builder.
@@ -104,7 +106,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<IStepLineSeries<TDrawingContext>>> StepLineSeriesBuilder { get; set; } = new();
+    public List<Action<IStepLineSeries<TDrawingContext>>> StepLineSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the  stacked stepline series builder.
@@ -112,7 +115,9 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<IStepLineSeries<TDrawingContext>>> StackedStepLineSeriesBuilder { get; set; } = new();
+    public List<
+        Action<IStepLineSeries<TDrawingContext>>
+    > StackedStepLineSeriesBuilder { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the line series builder.
@@ -136,7 +141,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The polar series builder.
     /// </value>
-    public List<Action<IPolarLineSeries<TDrawingContext>>> PolarLineSeriesBuilder { get; set; } = new();
+    public List<Action<IPolarLineSeries<TDrawingContext>>> PolarLineSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the line series builder.
@@ -144,7 +150,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The polar series builder.
     /// </value>
-    public List<Action<IPolarSeries<TDrawingContext>>> StackedPolarSeriesBuilder { get; set; } = new();
+    public List<Action<IPolarSeries<TDrawingContext>>> StackedPolarSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the line series builder.
@@ -160,7 +167,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<IFinancialSeries<TDrawingContext>>> FinancialSeriesBuilder { get; set; } = new();
+    public List<Action<IFinancialSeries<TDrawingContext>>> FinancialSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the stacked line series builder.
@@ -168,7 +176,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<ILineSeries<TDrawingContext>>> StackedLineSeriesBuilder { get; set; } = new();
+    public List<Action<ILineSeries<TDrawingContext>>> StackedLineSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the bar series builder.
@@ -200,7 +209,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<IStackedBarSeries<TDrawingContext>>> StackedBarSeriesBuilder { get; set; } = new();
+    public List<Action<IStackedBarSeries<TDrawingContext>>> StackedBarSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the stacked column series builder.
@@ -208,7 +218,9 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<IStackedBarSeries<TDrawingContext>>> StackedColumnSeriesBuilder { get; set; } = new();
+    public List<
+        Action<IStackedBarSeries<TDrawingContext>>
+    > StackedColumnSeriesBuilder { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the stacked row series builder.
@@ -216,7 +228,8 @@ public class Theme<TDrawingContext>
     /// <value>
     /// The pie series builder.
     /// </value>
-    public List<Action<IStackedBarSeries<TDrawingContext>>> StackedRowSeriesBuilder { get; set; } = new();
+    public List<Action<IStackedBarSeries<TDrawingContext>>> StackedRowSeriesBuilder { get; set; } =
+        new();
 
     /// <summary>
     /// Gets or sets the scatter series builder.
@@ -240,7 +253,8 @@ public class Theme<TDrawingContext>
     /// <param name="axis">The axis.</param>
     public void ApplyStyleToAxis(IPlane<TDrawingContext> axis)
     {
-        foreach (var rule in AxisBuilder) rule(axis);
+        foreach (var rule in AxisBuilder)
+            rule(axis);
     }
 
     /// <summary>
@@ -249,7 +263,8 @@ public class Theme<TDrawingContext>
     /// <param name="series">The series.</param>
     public virtual void ApplyStyleToSeries(IChartSeries<TDrawingContext> series)
     {
-        foreach (var rule in SeriesBuilder) rule(series);
+        foreach (var rule in SeriesBuilder)
+            rule(series);
 
         if ((series.SeriesProperties & SeriesProperties.PieSeries) == SeriesProperties.PieSeries)
         {
@@ -257,38 +272,56 @@ public class Theme<TDrawingContext>
             {
                 if ((series.SeriesProperties & SeriesProperties.GaugeFill) != 0)
                 {
-                    foreach (var rule in GaugeFillSeriesBuilder) rule((IPieSeries<TDrawingContext>)series);
+                    foreach (var rule in GaugeFillSeriesBuilder)
+                        rule((IPieSeries<TDrawingContext>)series);
                 }
                 else
                 {
-                    foreach (var rule in GaugeSeriesBuilder) rule((IPieSeries<TDrawingContext>)series);
+                    foreach (var rule in GaugeSeriesBuilder)
+                        rule((IPieSeries<TDrawingContext>)series);
                 }
             }
             else
             {
-                foreach (var rule in PieSeriesBuilder) rule((IPieSeries<TDrawingContext>)series);
+                foreach (var rule in PieSeriesBuilder)
+                    rule((IPieSeries<TDrawingContext>)series);
             }
         }
 
-        if ((series.SeriesProperties & SeriesProperties.CartesianSeries) == SeriesProperties.CartesianSeries)
+        if (
+            (series.SeriesProperties & SeriesProperties.CartesianSeries)
+            == SeriesProperties.CartesianSeries
+        )
         {
-            foreach (var rule in CartesianSeriesBuilder) rule((ICartesianSeries<TDrawingContext>)series);
+            foreach (var rule in CartesianSeriesBuilder)
+                rule((ICartesianSeries<TDrawingContext>)series);
         }
 
-        if ((series.SeriesProperties & SeriesProperties.Bar) == SeriesProperties.Bar &&
-            (series.SeriesProperties & SeriesProperties.Stacked) != SeriesProperties.Stacked)
+        if (
+            (series.SeriesProperties & SeriesProperties.Bar) == SeriesProperties.Bar
+            && (series.SeriesProperties & SeriesProperties.Stacked) != SeriesProperties.Stacked
+        )
         {
             var barSeries = (IBarSeries<TDrawingContext>)series;
-            foreach (var rule in BarSeriesBuilder) rule(barSeries);
+            foreach (var rule in BarSeriesBuilder)
+                rule(barSeries);
 
-            if ((series.SeriesProperties & SeriesProperties.PrimaryAxisVerticalOrientation) == SeriesProperties.PrimaryAxisVerticalOrientation)
+            if (
+                (series.SeriesProperties & SeriesProperties.PrimaryAxisVerticalOrientation)
+                == SeriesProperties.PrimaryAxisVerticalOrientation
+            )
             {
-                foreach (var rule in ColumnSeriesBuilder) rule(barSeries);
+                foreach (var rule in ColumnSeriesBuilder)
+                    rule(barSeries);
             }
 
-            if ((series.SeriesProperties & SeriesProperties.PrimaryAxisHorizontalOrientation) == SeriesProperties.PrimaryAxisHorizontalOrientation)
+            if (
+                (series.SeriesProperties & SeriesProperties.PrimaryAxisHorizontalOrientation)
+                == SeriesProperties.PrimaryAxisHorizontalOrientation
+            )
             {
-                foreach (var rule in RowSeriesBuilder) rule(barSeries);
+                foreach (var rule in RowSeriesBuilder)
+                    rule(barSeries);
             }
         }
 
@@ -296,83 +329,104 @@ public class Theme<TDrawingContext>
         if ((series.SeriesProperties & stackedBarMask) == stackedBarMask)
         {
             var stackedBarSeries = (IStackedBarSeries<TDrawingContext>)series;
-            foreach (var rule in StackedBarSeriesBuilder) rule(stackedBarSeries);
+            foreach (var rule in StackedBarSeriesBuilder)
+                rule(stackedBarSeries);
 
-            if ((series.SeriesProperties & SeriesProperties.PrimaryAxisVerticalOrientation) == SeriesProperties.PrimaryAxisVerticalOrientation)
+            if (
+                (series.SeriesProperties & SeriesProperties.PrimaryAxisVerticalOrientation)
+                == SeriesProperties.PrimaryAxisVerticalOrientation
+            )
             {
-                foreach (var rule in StackedColumnSeriesBuilder) rule(stackedBarSeries);
+                foreach (var rule in StackedColumnSeriesBuilder)
+                    rule(stackedBarSeries);
             }
 
-            if ((series.SeriesProperties & SeriesProperties.PrimaryAxisHorizontalOrientation) == SeriesProperties.PrimaryAxisHorizontalOrientation)
+            if (
+                (series.SeriesProperties & SeriesProperties.PrimaryAxisHorizontalOrientation)
+                == SeriesProperties.PrimaryAxisHorizontalOrientation
+            )
             {
-                foreach (var rule in StackedRowSeriesBuilder) rule(stackedBarSeries);
+                foreach (var rule in StackedRowSeriesBuilder)
+                    rule(stackedBarSeries);
             }
         }
 
         if ((series.SeriesProperties & SeriesProperties.Scatter) == SeriesProperties.Scatter)
         {
-            foreach (var rule in ScatterSeriesBuilder) rule((IScatterSeries<TDrawingContext>)series);
+            foreach (var rule in ScatterSeriesBuilder)
+                rule((IScatterSeries<TDrawingContext>)series);
         }
 
         if ((series.SeriesProperties & SeriesProperties.StepLine) == SeriesProperties.StepLine)
         {
             var stepSeries = (IStepLineSeries<TDrawingContext>)series;
-            foreach (var rule in StepLineSeriesBuilder) rule(stepSeries);
+            foreach (var rule in StepLineSeriesBuilder)
+                rule(stepSeries);
 
             if ((series.SeriesProperties & SeriesProperties.Stacked) == SeriesProperties.Stacked)
             {
-                foreach (var rule in StackedStepLineSeriesBuilder) rule(stepSeries);
+                foreach (var rule in StackedStepLineSeriesBuilder)
+                    rule(stepSeries);
             }
         }
 
         if ((series.SeriesProperties & SeriesProperties.BoxSeries) == SeriesProperties.BoxSeries)
         {
-            foreach (var rule in BoxSeriesBuilder) rule((IBoxSeries<TDrawingContext>)series);
+            foreach (var rule in BoxSeriesBuilder)
+                rule((IBoxSeries<TDrawingContext>)series);
         }
 
         if ((series.SeriesProperties & SeriesProperties.Line) == SeriesProperties.Line)
         {
             var lineSeries = (ILineSeries<TDrawingContext>)series;
-            foreach (var rule in LineSeriesBuilder) rule(lineSeries);
+            foreach (var rule in LineSeriesBuilder)
+                rule(lineSeries);
 
             if ((series.SeriesProperties & SeriesProperties.Stacked) == SeriesProperties.Stacked)
             {
-                foreach (var rule in StackedLineSeriesBuilder) rule(lineSeries);
+                foreach (var rule in StackedLineSeriesBuilder)
+                    rule(lineSeries);
             }
         }
 
         if ((series.SeriesProperties & SeriesProperties.Polar) == SeriesProperties.Polar)
         {
             var polarSeries = (IPolarSeries<TDrawingContext>)series;
-            foreach (var rule in PolarSeriesBuilder) rule(polarSeries);
+            foreach (var rule in PolarSeriesBuilder)
+                rule(polarSeries);
 
             if ((series.SeriesProperties & SeriesProperties.Stacked) == SeriesProperties.Stacked)
             {
-                foreach (var rule in StackedPolarSeriesBuilder) rule(polarSeries);
+                foreach (var rule in StackedPolarSeriesBuilder)
+                    rule(polarSeries);
             }
         }
 
         if ((series.SeriesProperties & SeriesProperties.PolarLine) == SeriesProperties.PolarLine)
         {
             var polarSeries = (IPolarLineSeries<TDrawingContext>)series;
-            foreach (var rule in PolarLineSeriesBuilder) rule(polarSeries);
+            foreach (var rule in PolarLineSeriesBuilder)
+                rule(polarSeries);
 
             if ((series.SeriesProperties & SeriesProperties.Stacked) == SeriesProperties.Stacked)
             {
-                foreach (var rule in StackedPolarSeriesBuilder) rule(polarSeries);
+                foreach (var rule in StackedPolarSeriesBuilder)
+                    rule(polarSeries);
             }
         }
 
         if ((series.SeriesProperties & SeriesProperties.Heat) == SeriesProperties.Heat)
         {
             var heatSeries = (IHeatSeries<TDrawingContext>)series;
-            foreach (var rule in HeatSeriesBuilder) rule(heatSeries);
+            foreach (var rule in HeatSeriesBuilder)
+                rule(heatSeries);
         }
 
         if ((series.SeriesProperties & SeriesProperties.Financial) == SeriesProperties.Financial)
         {
             var financialSeries = (IFinancialSeries<TDrawingContext>)series;
-            foreach (var rule in FinancialSeriesBuilder) rule(financialSeries);
+            foreach (var rule in FinancialSeriesBuilder)
+                rule(financialSeries);
         }
     }
 
@@ -382,7 +436,8 @@ public class Theme<TDrawingContext>
     /// <param name="drawMarginFrame"></param>
     public void ApplyStyleToDrawMargin(DrawMarginFrame<TDrawingContext> drawMarginFrame)
     {
-        foreach (var rule in DrawMarginFrameBuilder) rule(drawMarginFrame);
+        foreach (var rule in DrawMarginFrameBuilder)
+            rule(drawMarginFrame);
     }
 
     /// <summary>

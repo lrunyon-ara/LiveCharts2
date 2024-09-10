@@ -63,6 +63,7 @@ namespace LiveChartsCore.SkiaSharpView.WinForms
             this.skControl2.Size = new System.Drawing.Size(150, 150);
             this.skControl2.TabIndex = 1;
             this.skControl2.Text = "skControl2";
+            // TODO: part 5
             this.skControl2.PaintSurface += new System.EventHandler<SkiaSharp.Views.Desktop.SKPaintSurfaceEventArgs>(this.SkControl_PaintSurface);
             // 
             // MotionCanvas

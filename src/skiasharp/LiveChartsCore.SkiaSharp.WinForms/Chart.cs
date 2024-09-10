@@ -66,12 +66,17 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
     private TooltipPosition _tooltipPosition = LiveCharts.DefaultSettings.TooltipPosition;
     private VisualElement<SkiaSharpDrawingContext>? _title;
     private readonly CollectionDeepObserver<ChartElement<SkiaSharpDrawingContext>> _visualsObserver;
-    private IEnumerable<ChartElement<SkiaSharpDrawingContext>> _visuals = new List<ChartElement<SkiaSharpDrawingContext>>();
-    private IPaint<SkiaSharpDrawingContext>? _legendTextPaint = (IPaint<SkiaSharpDrawingContext>?)LiveCharts.DefaultSettings.LegendTextPaint;
-    private IPaint<SkiaSharpDrawingContext>? _legendBackgroundPaint = (IPaint<SkiaSharpDrawingContext>?)LiveCharts.DefaultSettings.LegendBackgroundPaint;
+    private IEnumerable<ChartElement<SkiaSharpDrawingContext>> _visuals =
+        new List<ChartElement<SkiaSharpDrawingContext>>();
+    private IPaint<SkiaSharpDrawingContext>? _legendTextPaint = (IPaint<SkiaSharpDrawingContext>?)
+        LiveCharts.DefaultSettings.LegendTextPaint;
+    private IPaint<SkiaSharpDrawingContext>? _legendBackgroundPaint =
+        (IPaint<SkiaSharpDrawingContext>?)LiveCharts.DefaultSettings.LegendBackgroundPaint;
     private double? _legendTextSize = LiveCharts.DefaultSettings.LegendTextSize;
-    private IPaint<SkiaSharpDrawingContext>? _tooltipTextPaint = (IPaint<SkiaSharpDrawingContext>?)LiveCharts.DefaultSettings.TooltipTextPaint;
-    private IPaint<SkiaSharpDrawingContext>? _tooltipBackgroundPaint = (IPaint<SkiaSharpDrawingContext>?)LiveCharts.DefaultSettings.TooltipBackgroundPaint;
+    private IPaint<SkiaSharpDrawingContext>? _tooltipTextPaint = (IPaint<SkiaSharpDrawingContext>?)
+        LiveCharts.DefaultSettings.TooltipTextPaint;
+    private IPaint<SkiaSharpDrawingContext>? _tooltipBackgroundPaint =
+        (IPaint<SkiaSharpDrawingContext>?)LiveCharts.DefaultSettings.TooltipBackgroundPaint;
     private double? _tooltipTextSize = LiveCharts.DefaultSettings.TooltipTextSize;
 
     /// <summary>
@@ -80,11 +85,17 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
     /// <param name="tooltip">The default tool tip control.</param>
     /// <param name="legend">The default legend.</param>
     /// <exception cref="MotionCanvas"></exception>
-    protected Chart(IChartTooltip<SkiaSharpDrawingContext>? tooltip, IChartLegend<SkiaSharpDrawingContext>? legend)
+    protected Chart(
+        IChartTooltip<SkiaSharpDrawingContext>? tooltip,
+        IChartLegend<SkiaSharpDrawingContext>? legend
+    )
     {
-        if (tooltip is not null) this.tooltip = tooltip;
-        if (legend is not null) this.legend = legend;
+        if (tooltip is not null)
+            this.tooltip = tooltip;
+        if (legend is not null)
+            this.legend = legend;
 
+        //TODO: part 7
         motionCanvas = new MotionCanvas();
         SuspendLayout();
         motionCanvas.Dock = DockStyle.Fill;
@@ -111,9 +122,13 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
         InitializeCore();
 
         _visualsObserver = new CollectionDeepObserver<ChartElement<SkiaSharpDrawingContext>>(
-            OnDeepCollectionChanged, OnDeepCollectionPropertyChanged, true);
+            OnDeepCollectionChanged,
+            OnDeepCollectionPropertyChanged,
+            true
+        );
 
-        if (core is null) throw new Exception("Core not found!");
+        if (core is null)
+            throw new Exception("Core not found!");
         core.Measuring += OnCoreMeasuring;
         core.UpdateStarted += OnCoreUpdateStarted;
         core.UpdateFinished += OnCoreUpdateFinished;
@@ -176,15 +191,39 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
 
     /// <inheritdoc cref="IChartView.DrawMargin" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public Margin? DrawMargin { get => _drawMargin; set { _drawMargin = value; OnPropertyChanged(); } }
+    public Margin? DrawMargin
+    {
+        get => _drawMargin;
+        set
+        {
+            _drawMargin = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.Title"/>
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public VisualElement<SkiaSharpDrawingContext>? Title { get => _title; set { _title = value; OnPropertyChanged(); } }
+    public VisualElement<SkiaSharpDrawingContext>? Title
+    {
+        get => _title;
+        set
+        {
+            _title = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView.SyncContext" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public object SyncContext { get => CoreCanvas.Sync; set { CoreCanvas.Sync = value; OnPropertyChanged(); } }
+    public object SyncContext
+    {
+        get => CoreCanvas.Sync;
+        set
+        {
+            CoreCanvas.Sync = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView.AnimationsSpeed" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -192,47 +231,120 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
 
     /// <inheritdoc cref="IChartView.AnimationsSpeed" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public Func<float, float>? EasingFunction { get; set; } = LiveCharts.DefaultSettings.EasingFunction;
+    public Func<float, float>? EasingFunction { get; set; } =
+        LiveCharts.DefaultSettings.EasingFunction;
 
     /// <inheritdoc cref="IChartView.LegendPosition" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public LegendPosition LegendPosition { get => _legendPosition; set { _legendPosition = value; OnPropertyChanged(); } }
+    public LegendPosition LegendPosition
+    {
+        get => _legendPosition;
+        set
+        {
+            _legendPosition = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.LegendTextPaint" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IPaint<SkiaSharpDrawingContext>? LegendTextPaint { get => _legendTextPaint; set { _legendTextPaint = value; OnPropertyChanged(); } }
+    public IPaint<SkiaSharpDrawingContext>? LegendTextPaint
+    {
+        get => _legendTextPaint;
+        set
+        {
+            _legendTextPaint = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.LegendBackgroundPaint" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IPaint<SkiaSharpDrawingContext>? LegendBackgroundPaint { get => _legendBackgroundPaint; set { _legendBackgroundPaint = value; OnPropertyChanged(); } }
+    public IPaint<SkiaSharpDrawingContext>? LegendBackgroundPaint
+    {
+        get => _legendBackgroundPaint;
+        set
+        {
+            _legendBackgroundPaint = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.LegendTextSize" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public double? LegendTextSize { get => _legendTextSize; set { _legendTextSize = value; OnPropertyChanged(); } }
+    public double? LegendTextSize
+    {
+        get => _legendTextSize;
+        set
+        {
+            _legendTextSize = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.Legend" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IChartLegend<SkiaSharpDrawingContext>? Legend { get => legend; set => legend = value; }
+    public IChartLegend<SkiaSharpDrawingContext>? Legend
+    {
+        get => legend;
+        set => legend = value;
+    }
 
     /// <inheritdoc cref="IChartView.LegendPosition" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public TooltipPosition TooltipPosition { get => _tooltipPosition; set { _tooltipPosition = value; OnPropertyChanged(); } }
+    public TooltipPosition TooltipPosition
+    {
+        get => _tooltipPosition;
+        set
+        {
+            _tooltipPosition = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.TooltipTextPaint" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IPaint<SkiaSharpDrawingContext>? TooltipTextPaint { get => _tooltipTextPaint; set { _tooltipTextPaint = value; OnPropertyChanged(); } }
+    public IPaint<SkiaSharpDrawingContext>? TooltipTextPaint
+    {
+        get => _tooltipTextPaint;
+        set
+        {
+            _tooltipTextPaint = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.TooltipBackgroundPaint" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IPaint<SkiaSharpDrawingContext>? TooltipBackgroundPaint { get => _tooltipBackgroundPaint; set { _tooltipBackgroundPaint = value; OnPropertyChanged(); } }
+    public IPaint<SkiaSharpDrawingContext>? TooltipBackgroundPaint
+    {
+        get => _tooltipBackgroundPaint;
+        set
+        {
+            _tooltipBackgroundPaint = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.TooltipTextSize" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public double? TooltipTextSize { get => _tooltipTextSize; set { _tooltipTextSize = value; OnPropertyChanged(); } }
+    public double? TooltipTextSize
+    {
+        get => _tooltipTextSize;
+        set
+        {
+            _tooltipTextSize = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.Tooltip" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IChartTooltip<SkiaSharpDrawingContext>? Tooltip { get => tooltip; set => tooltip = value; }
+    public IChartTooltip<SkiaSharpDrawingContext>? Tooltip
+    {
+        get => tooltip;
+        set => tooltip = value;
+    }
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.AutoUpdateEnabled" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -240,7 +352,8 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
 
     /// <inheritdoc cref="IChartView.UpdaterThrottler" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public TimeSpan UpdaterThrottler { get; set; } = LiveCharts.DefaultSettings.UpdateThrottlingTimeout;
+    public TimeSpan UpdaterThrottler { get; set; } =
+        LiveCharts.DefaultSettings.UpdateThrottlingTimeout;
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.VisualElements" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -259,10 +372,15 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
     #endregion
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.GetPointsAt(LvcPoint, TooltipFindingStrategy)"/>
-    public abstract IEnumerable<ChartPoint> GetPointsAt(LvcPoint point, TooltipFindingStrategy strategy = TooltipFindingStrategy.Automatic);
+    public abstract IEnumerable<ChartPoint> GetPointsAt(
+        LvcPoint point,
+        TooltipFindingStrategy strategy = TooltipFindingStrategy.Automatic
+    );
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.GetVisualsAt(LvcPoint)"/>
-    public abstract IEnumerable<VisualElement<SkiaSharpDrawingContext>> GetVisualsAt(LvcPoint point);
+    public abstract IEnumerable<VisualElement<SkiaSharpDrawingContext>> GetVisualsAt(
+        LvcPoint point
+    );
 
     /// <summary>
     /// Gets the drawn control.
@@ -280,7 +398,8 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
 
     void IChartView.InvokeOnUIThread(Action action)
     {
-        if (!IsHandleCreated) return;
+        if (!IsHandleCreated)
+            return;
         _ = BeginInvoke(action);
     }
 
@@ -296,7 +415,8 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
     /// <returns></returns>
     protected void OnPropertyChanged()
     {
-        if (core is null || ((IChartView)this).DesignerMode) return;
+        if (core is null || ((IChartView)this).DesignerMode)
+            return;
         core.Update();
     }
 
@@ -307,7 +427,8 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
     /// <returns></returns>
     protected override void OnHandleDestroyed(EventArgs e)
     {
-        if (tooltip is IDisposable disposableTooltip) disposableTooltip.Dispose();
+        if (tooltip is IDisposable disposableTooltip)
+            disposableTooltip.Dispose();
         base.OnHandleDestroyed(e);
 
         core?.Unload();
@@ -328,7 +449,8 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
 
     private void OnResized(object? sender, EventArgs e)
     {
-        if (core is null) return;
+        if (core is null)
+            return;
         core.Update();
     }
 
@@ -389,9 +511,14 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
     }
 
     void IChartView<SkiaSharpDrawingContext>.OnVisualElementPointerDown(
-        IEnumerable<VisualElement<SkiaSharpDrawingContext>> visualElements, LvcPoint pointer)
+        IEnumerable<VisualElement<SkiaSharpDrawingContext>> visualElements,
+        LvcPoint pointer
+    )
     {
-        VisualElementsPointerDown?.Invoke(this, new VisualElementsEventArgs<SkiaSharpDrawingContext>(CoreChart, visualElements, pointer));
+        VisualElementsPointerDown?.Invoke(
+            this,
+            new VisualElementsEventArgs<SkiaSharpDrawingContext>(CoreChart, visualElements, pointer)
+        );
     }
 
     void IChartView.Invalidate()

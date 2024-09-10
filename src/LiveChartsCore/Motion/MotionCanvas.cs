@@ -76,7 +76,11 @@ public class MotionCanvas<TDrawingContext> : IDisposable
     /// <value>
     /// The synchronize.
     /// </value>
-    public object Sync { get => _sync; internal set => _sync = value ?? new object(); }
+    public object Sync
+    {
+        get => _sync;
+        internal set => _sync = value ?? new object();
+    }
 
     /// <summary>
     /// Gets the animatables collection.
@@ -93,8 +97,9 @@ public class MotionCanvas<TDrawingContext> : IDisposable
 #if DEBUG
         if (LiveCharts.EnableLogging)
             Trace.WriteLine(
-                $"[core canvas frame drawn] ".PadRight(60) +
-                $"tread: {Environment.CurrentManagedThreadId}");
+                $"[core canvas frame drawn] ".PadRight(60)
+                    + $"tread: {Environment.CurrentManagedThreadId}"
+            );
 #endif
 
         lock (Sync)
@@ -104,34 +109,46 @@ public class MotionCanvas<TDrawingContext> : IDisposable
             var isValid = true;
             var frameTime = _stopwatch.ElapsedMilliseconds;
 
-            var toRemoveGeometries = new List<Tuple<IPaint<TDrawingContext>, IDrawable<TDrawingContext>>>();
+            var toRemoveGeometries =
+                new List<Tuple<IPaint<TDrawingContext>, IDrawable<TDrawingContext>>>();
 
             foreach (var task in _paintTasks.Where(x => x is not null).OrderBy(x => x.ZIndex))
             {
-                if (DisableAnimations) task.CompleteTransition(null);
+                if (DisableAnimations)
+                    task.CompleteTransition(null);
                 task.IsValid = true;
                 task.CurrentTime = frameTime;
                 task.InitializeTask(context);
 
                 foreach (var geometry in task.GetGeometries(this))
                 {
-                    if (geometry is null) continue;
-                    if (DisableAnimations) geometry.CompleteTransition(null);
+                    if (geometry is null)
+                        continue;
+                    if (DisableAnimations)
+                        geometry.CompleteTransition(null);
 
                     geometry.IsValid = true;
                     geometry.CurrentTime = frameTime;
-                    if (!task.IsPaused) geometry.Draw(context);
+
+                    // TODO: part 3
+                    if (!task.IsPaused)
+                        geometry.Draw(context);
 
                     isValid = isValid && geometry.IsValid;
 
                     if (geometry.IsValid && geometry.RemoveOnCompleted)
                         toRemoveGeometries.Add(
-                            new Tuple<IPaint<TDrawingContext>, IDrawable<TDrawingContext>>(task, geometry));
+                            new Tuple<IPaint<TDrawingContext>, IDrawable<TDrawingContext>>(
+                                task,
+                                geometry
+                            )
+                        );
                 }
 
                 isValid = isValid && task.IsValid;
 
-                if (task.RemoveOnCompleted && task.IsValid) _ = _paintTasks.Remove(task);
+                if (task.RemoveOnCompleted && task.IsValid)
+                    _ = _paintTasks.Remove(task);
                 task.Dispose();
             }
 
@@ -153,13 +170,17 @@ public class MotionCanvas<TDrawingContext> : IDisposable
 
 #if DEBUG
             var dt = frameTime - _previousFrameTime;
-            if (dt == 0) dt = 1;
+            if (dt == 0)
+                dt = 1;
             _fpsStack.Add(1000 / dt);
-            if (_fpsStack.Count > 15) _fpsStack.RemoveAt(0);
+            if (_fpsStack.Count > 15)
+                _fpsStack.RemoveAt(0);
             if (frameTime - _previousLogTime > 500)
             {
                 if (LiveCharts.EnableLogging)
-                    Trace.WriteLine($"[LiveCharts] fps = {_fpsStack.DefaultIfEmpty(0).Average():0.00}");
+                    Trace.WriteLine(
+                        $"[LiveCharts] fps = {_fpsStack.DefaultIfEmpty(0).Average():0.00}"
+                    );
                 _previousLogTime = frameTime;
             }
 #endif
@@ -170,7 +191,8 @@ public class MotionCanvas<TDrawingContext> : IDisposable
             context.OnEndDraw();
         }
 
-        if (IsValid) Validated?.Invoke(this);
+        if (IsValid)
+            Validated?.Invoke(this);
     }
 
     /// <summary>
@@ -242,8 +264,8 @@ public class MotionCanvas<TDrawingContext> : IDisposable
         var count = 0;
 
         foreach (var task in _paintTasks)
-            foreach (var geometry in task.GetGeometries(this))
-                count++;
+        foreach (var geometry in task.GetGeometries(this))
+            count++;
 
         return count;
     }

@@ -47,6 +47,7 @@ public partial class MotionCanvas : UserControl
     /// </summary>
     public MotionCanvas()
     {
+        // TODO: part 6
         InitializeComponent();
     }
 
@@ -108,7 +109,10 @@ public partial class MotionCanvas : UserControl
 
     private void SkControl_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
     {
-        CanvasCore.DrawFrame(new SkiaSharpDrawingContext(CanvasCore, e.Info, e.Surface, e.Surface.Canvas));
+        // TODO: part 4
+        CanvasCore.DrawFrame(
+            new SkiaSharpDrawingContext(CanvasCore, e.Info, e.Surface, e.Surface.Canvas)
+        );
     }
 
     private void CanvasCore_Invalidated(MotionCanvas<SkiaSharpDrawingContext> sender)
@@ -118,7 +122,8 @@ public partial class MotionCanvas : UserControl
 
     private async void RunDrawingLoop()
     {
-        if (_isDrawingLoopRunning) return;
+        if (_isDrawingLoopRunning)
+            return;
         _isDrawingLoopRunning = true;
 
         var ts = TimeSpan.FromSeconds(1 / MaxFps);

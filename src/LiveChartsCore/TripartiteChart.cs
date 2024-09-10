@@ -1,26 +1,4 @@
-﻿// The MIT License(MIT)
-//
-// Copyright(c) 2021 Alberto Rodriguez Orozco & LiveCharts Contributors
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,52 +10,33 @@ using LiveChartsCore.Motion;
 
 namespace LiveChartsCore;
 
-// TODO: find in this class where the actual drawing of axes takes place
-// we are looking for some type of .Draw(IDrawingContext) or similar call
-// Could also be in the Chart<IDrawingContext> class which CartesianChart inherits from
-
-// update: search the project for .Draw( until you find where stuff is drawn maybe?
-
-// update: searching for .Draw( didn't really work. I think we need to find where the axes' geometries are declared
-// specficially their drawing methods
-
-// update: search for .AddDrawableTask(
-
-// update: we know core axis contain the import .Invalidate( function,
-// we need to find what inherits it and also try to see where invalidate is called
-
-// update: seems as though I will have to make a new CoreAxis version for our Tripartite chart since we need a different AxisOrientation
-
-// update: look for the drawing that is related to seperators, probably .UpdateSeparator(
-// find out what each var in UpdateSeparator means
-
 /// <summary>
-/// Defines a Cartesian chart.
+/// Defines a Tripartite chart.
 /// </summary>
 /// <typeparam name="TDrawingContext">The type of the drawing context.</typeparam>
 /// <seealso cref="Chart{TDrawingContext}" />
-public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
+public class TripartiteChart<TDrawingContext> : Chart<TDrawingContext>
     where TDrawingContext : DrawingContext
 {
     internal readonly ISizedGeometry<TDrawingContext> _zoomingSection;
-    private readonly ICartesianChartView<TDrawingContext> _chartView;
+    private readonly ITripartiteChartView<TDrawingContext> _chartView;
     private int _nextSeries = 0;
     private double _zoomingSpeed = 0;
     private ZoomAndPanMode _zoomMode;
     private DrawMarginFrame<TDrawingContext>? _previousDrawMarginFrame;
     private const double MaxAxisBound = 0.05;
     private const double MaxAxisActiveBound = 0.15;
-    private HashSet<ICartesianAxis<TDrawingContext>> _crosshair = new();
+    private HashSet<ITripartiteAxis<TDrawingContext>> _crosshair = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CartesianChart{TDrawingContext}"/> class.
+    /// Initializes a new instance of the <see cref="TripartiteChart{TDrawingContext}"/> class.
     /// </summary>
     /// <param name="view">The view.</param>
     /// <param name="defaultPlatformConfig">The default platform configuration.</param>
     /// <param name="canvas">The canvas.</param>
     /// <param name="zoomingSection">The zooming section.</param>
-    public CartesianChart(
-        ICartesianChartView<TDrawingContext> view,
+    public TripartiteChart(
+        ITripartiteChartView<TDrawingContext> view,
         Action<LiveChartsSettings> defaultPlatformConfig,
         MotionCanvas<TDrawingContext> canvas,
         ISizedGeometry<TDrawingContext>? zoomingSection
@@ -99,8 +58,8 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <value>
     /// The x axes.
     /// </value>
-    public ICartesianAxis<TDrawingContext>[] XAxes { get; private set; } =
-        Array.Empty<ICartesianAxis<TDrawingContext>>();
+    public ITripartiteAxis<TDrawingContext>[] XAxes { get; private set; } =
+        Array.Empty<ITripartiteAxis<TDrawingContext>>();
 
     /// <summary>
     /// Gets the y axes.
@@ -108,8 +67,26 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <value>
     /// The y axes.
     /// </value>
-    public ICartesianAxis<TDrawingContext>[] YAxes { get; private set; } =
-        Array.Empty<ICartesianAxis<TDrawingContext>>();
+    public ITripartiteAxis<TDrawingContext>[] YAxes { get; private set; } =
+        Array.Empty<ITripartiteAxis<TDrawingContext>>();
+
+    /// <summary>
+    /// Gets the y axes.
+    /// </summary>
+    /// <value>
+    /// The y axes.
+    /// </value>
+    public ITripartiteAxis<TDrawingContext>[] AccelerationAxes { get; private set; } =
+        Array.Empty<ITripartiteAxis<TDrawingContext>>();
+
+    /// <summary>
+    /// Gets the y axes.
+    /// </summary>
+    /// <value>
+    /// The y axes.
+    /// </value>
+    public ITripartiteAxis<TDrawingContext>[] VelocityAxes { get; private set; } =
+        Array.Empty<ITripartiteAxis<TDrawingContext>>();
 
     /// <summary>
     /// Gets the sections.
@@ -117,6 +94,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <value>
     /// The sections.
     /// </value>
+    /// // TODO: make tripartite
     public IEnumerable<Section<TDrawingContext>> Sections { get; private set; } =
         Array.Empty<Section<TDrawingContext>>();
 
@@ -168,15 +146,20 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <param name="xAxisIndex">Index of the x axis.</param>
     /// <param name="yAxisIndex">Index of the y axis.</param>
     /// <returns></returns>
+    /// TODO: tripartite
     public double[] ScaleUIPoint(LvcPoint point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
         var xAxis = XAxes[xAxisIndex];
         var yAxis = YAxes[yAxisIndex];
 
-        var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
-        var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
+        var xTripartiteScaler = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, xAxis);
+        var yTripartiteScaler = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, yAxis);
 
-        return new double[] { xScaler.ToChartValues(point.X), yScaler.ToChartValues(point.Y) };
+        return new double[]
+        {
+            xTripartiteScaler.ToChartValues(point.X),
+            yTripartiteScaler.ToChartValues(point.Y)
+        };
     }
 
     /// <summary>
@@ -208,12 +191,15 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
 
         var m = direction == ZoomDirection.ZoomIn ? speed : 1 / speed;
 
+        // tripartite
         if ((_zoomMode & ZoomAndPanMode.ZoomX) == ZoomAndPanMode.ZoomX)
         {
             for (var index = 0; index < XAxes.Length; index++)
             {
                 var xi = XAxes[index];
-                var px = new Scaler(DrawMarginLocation, DrawMarginSize, xi).ToChartValues(pivot.X);
+                var px = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, xi).ToChartValues(
+                    pivot.X
+                );
 
                 var limits = xi.GetLimits();
 
@@ -273,7 +259,9 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
             for (var index = 0; index < YAxes.Length; index++)
             {
                 var yi = YAxes[index];
-                var px = new Scaler(DrawMarginLocation, DrawMarginSize, yi).ToChartValues(pivot.Y);
+                var px = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, yi).ToChartValues(
+                    pivot.Y
+                );
 
                 var limits = yi.GetLimits();
 
@@ -343,7 +331,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
             for (var index = 0; index < XAxes.Length; index++)
             {
                 var xi = XAxes[index];
-                var scale = new Scaler(DrawMarginLocation, DrawMarginSize, xi);
+                var scale = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, xi);
                 var dx = scale.ToChartValues(-delta.X) - scale.ToChartValues(0);
 
                 var limits = xi.GetLimits();
@@ -375,7 +363,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
             for (var index = 0; index < YAxes.Length; index++)
             {
                 var yi = YAxes[index];
-                var scale = new Scaler(DrawMarginLocation, DrawMarginSize, yi);
+                var scale = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, yi);
                 var dy = -(scale.ToChartValues(delta.Y) - scale.ToChartValues(0));
 
                 var limits = yi.GetLimits();
@@ -415,7 +403,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
         if (LiveCharts.EnableLogging)
         {
             Trace.WriteLine(
-                $"[Cartesian chart measured]".PadRight(60)
+                $"[Tripartite chart measured]".PadRight(60)
                     + $"tread: {Environment.CurrentManagedThreadId}"
             );
         }
@@ -441,8 +429,12 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
         var viewDrawMargin = _chartView.DrawMargin;
         ControlSize = _chartView.ControlSize;
 
-        YAxes = _chartView.YAxes.Cast<ICartesianAxis<TDrawingContext>>().ToArray();
-        XAxes = _chartView.XAxes.Cast<ICartesianAxis<TDrawingContext>>().ToArray();
+        YAxes = _chartView.YAxes.Cast<ITripartiteAxis<TDrawingContext>>().ToArray();
+        XAxes = _chartView.XAxes.Cast<ITripartiteAxis<TDrawingContext>>().ToArray();
+        AccelerationAxes = _chartView
+            .AccelerationAxes.Cast<ITripartiteAxis<TDrawingContext>>()
+            .ToArray();
+        VelocityAxes = _chartView.VelocityAxes.Cast<ITripartiteAxis<TDrawingContext>>().ToArray();
 
         _zoomingSpeed = _chartView.ZoomingSpeed;
         _zoomMode = _chartView.ZoomMode;
@@ -468,12 +460,13 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
         SeriesContext = new SeriesContext<TDrawingContext>(VisibleSeries, this);
         var isNewTheme = LiveCharts.DefaultSettings.CurrentThemeId != ThemeId;
 
+        //TODO: accelertation and velocity axis
         // restart axes bounds and meta data
         foreach (var axis in XAxes)
         {
             var ce = (ChartElement<TDrawingContext>)axis;
             ce._isInternalSet = true;
-            axis.Initialize(AxisOrientation.X);
+            axis.Initialize(TripartiteAxisOrientation.X);
             if (!ce._isThemeSet || isNewTheme)
             {
                 theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
@@ -488,7 +481,35 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
             var ce = (ChartElement<TDrawingContext>)axis;
             ce._isInternalSet = true;
             // TODO: maybe here?
-            axis.Initialize(AxisOrientation.Y);
+            axis.Initialize(TripartiteAxisOrientation.Y);
+            if (!ce._isThemeSet || isNewTheme)
+            {
+                theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
+                ce._isThemeSet = true;
+            }
+            ce._isInternalSet = false;
+            if (axis.CrosshairPaint is not null)
+                _crosshair.Add(axis);
+        }
+        foreach (var axis in AccelerationAxes)
+        {
+            var ce = (ChartElement<TDrawingContext>)axis;
+            ce._isInternalSet = true;
+            axis.Initialize(TripartiteAxisOrientation.Acceleration);
+            if (!ce._isThemeSet || isNewTheme)
+            {
+                theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
+                ce._isThemeSet = true;
+            }
+            ce._isInternalSet = false;
+            if (axis.CrosshairPaint is not null)
+                _crosshair.Add(axis);
+        }
+        foreach (var axis in VelocityAxes)
+        {
+            var ce = (ChartElement<TDrawingContext>)axis;
+            ce._isInternalSet = true;
+            axis.Initialize(TripartiteAxisOrientation.Velocity);
             if (!ce._isThemeSet || isNewTheme)
             {
                 theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
@@ -502,7 +523,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
         // get seriesBounds
         SetDrawMargin(ControlSize, new Margin());
 
-        foreach (var series in VisibleSeries.Cast<ICartesianSeries<TDrawingContext>>())
+        foreach (var series in VisibleSeries.Cast<ITripartiteSeries<TDrawingContext>>())
         {
             if (series.SeriesId == -1)
                 series.SeriesId = _nextSeries++;
@@ -851,7 +872,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
             AddVisual(title);
         }
 
-        var totalAxes = XAxes.Concat(YAxes);
+        var totalAxes = XAxes.Concat(YAxes).Concat(VelocityAxes).Concat(AccelerationAxes);
 
         foreach (var axis in totalAxes)
         {
@@ -865,7 +886,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
             // apply padding
             if (axis.MinLimit is null)
             {
-                var s = new Scaler(DrawMarginLocation, DrawMarginSize, axis);
+                var s = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, axis);
                 // correction by geometry size
                 var p = Math.Abs(
                     s.ToChartValues(axis.DataBounds.RequestedGeometrySize) - s.ToChartValues(0)
@@ -882,7 +903,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
             // apply padding
             if (axis.MaxLimit is null)
             {
-                var s = new Scaler(DrawMarginLocation, DrawMarginSize, axis);
+                var s = new TripartiteScaler(DrawMarginLocation, DrawMarginSize, axis);
                 // correction by geometry size
                 var p = Math.Abs(
                     s.ToChartValues(axis.DataBounds.RequestedGeometrySize) - s.ToChartValues(0)
@@ -974,8 +995,8 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
 
     internal override void InvokePointerDown(LvcPoint point, bool isSecondaryAction)
     {
-        var caretesianView = (ICartesianChartView<TDrawingContext>)View;
-        if ((caretesianView.ZoomMode & ZoomAndPanMode.InvertPanningPointerTrigger) != 0)
+        var tripartiteView = (ITripartiteChartView<TDrawingContext>)View;
+        if ((tripartiteView.ZoomMode & ZoomAndPanMode.InvertPanningPointerTrigger) != 0)
             isSecondaryAction = !isSecondaryAction;
 
         if (isSecondaryAction && _zoomMode != ZoomAndPanMode.None)
@@ -1074,7 +1095,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
                 _sectionZoomingStart = null;
                 return;
             }
-
+            // TODO: tripartite
             if ((_zoomMode & ZoomAndPanMode.X) == ZoomAndPanMode.X)
             {
                 for (var i = 0; i < XAxes.Length; i++)
@@ -1186,20 +1207,20 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
         base.InvokePointerUp(point, isSecondaryAction);
     }
 
-    private static void AppendLimits(ICartesianAxis x, ICartesianAxis y, DimensionalBounds bounds)
+    private static void AppendLimits(ITripartiteAxis x, ITripartiteAxis y, DimensionalBounds bounds)
     {
         x.DataBounds.AppendValue(bounds.SecondaryBounds);
         x.VisibleDataBounds.AppendValue(bounds.VisibleSecondaryBounds);
         y.DataBounds.AppendValue(bounds.PrimaryBounds);
         y.VisibleDataBounds.AppendValue(bounds.VisiblePrimaryBounds);
 
-        foreach (var sharedX in x.SharedWith ?? Enumerable.Empty<ICartesianAxis>())
+        foreach (var sharedX in x.SharedWith ?? Enumerable.Empty<ITripartiteAxis>())
         {
             sharedX.DataBounds.AppendValue(bounds.SecondaryBounds);
             sharedX.VisibleDataBounds.AppendValue(bounds.VisibleSecondaryBounds);
         }
 
-        foreach (var sharedY in y.SharedWith ?? Enumerable.Empty<ICartesianAxis>())
+        foreach (var sharedY in y.SharedWith ?? Enumerable.Empty<ITripartiteAxis>())
         {
             sharedY.DataBounds.AppendValue(bounds.PrimaryBounds);
             sharedY.VisibleDataBounds.AppendValue(bounds.VisiblePrimaryBounds);

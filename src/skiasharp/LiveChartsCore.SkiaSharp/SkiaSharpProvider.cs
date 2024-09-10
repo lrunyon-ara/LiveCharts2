@@ -45,6 +45,12 @@ public class SkiaSharpProvider : ChartEngine<SkiaSharpDrawingContext>
         return new Axis();
     }
 
+    /// <inheritdoc cref="ChartEngine{TDrawingContext}.GetDefaultTripartiteAxis"/>
+    public override ITripartiteAxis GetDefaultTripartiteAxis()
+    {
+        return new TripartiteAxis();
+    }
+
     /// <inheritdoc cref="ChartEngine{TDrawingContext}.GetDefaultPolarAxis"/>
     public override IPolarAxis GetDefaultPolarAxis()
     {

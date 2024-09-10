@@ -1,26 +1,4 @@
-﻿// The MIT License(MIT)
-//
-// Copyright(c) 2021 Alberto Rodriguez Orozco & LiveCharts Contributors
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -39,16 +17,20 @@ using SkiaSharp;
 
 namespace LiveChartsCore.SkiaSharpView.WinForms;
 
-/// <inheritdoc cref="ICartesianChartView{TDrawingContext}" />
-public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext>
+/// <inheritdoc cref="ITripartiteChartView{TDrawingContext}" />
+public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingContext>
 {
     private readonly CollectionDeepObserver<ISeries> _seriesObserver;
-    private readonly CollectionDeepObserver<ICartesianAxis> _xObserver;
-    private readonly CollectionDeepObserver<ICartesianAxis> _yObserver;
+    private readonly CollectionDeepObserver<ITripartiteAxis> _xObserver;
+    private readonly CollectionDeepObserver<ITripartiteAxis> _yObserver;
+    private readonly CollectionDeepObserver<ITripartiteAxis> _accelerationObserver;
+    private readonly CollectionDeepObserver<ITripartiteAxis> _velocityObserver;
     private readonly CollectionDeepObserver<Section<SkiaSharpDrawingContext>> _sectionsObserver;
     private IEnumerable<ISeries> _series = new List<ISeries>();
-    private IEnumerable<ICartesianAxis> _xAxes = new List<Axis> { new() };
-    private IEnumerable<ICartesianAxis> _yAxes = new List<Axis> { new() };
+    private IEnumerable<ITripartiteAxis> _xAxes = new List<TripartiteAxis> { new() };
+    private IEnumerable<ITripartiteAxis> _yAxes = new List<TripartiteAxis> { new() };
+    private IEnumerable<ITripartiteAxis> _accelerationAxes = new List<TripartiteAxis> { new() };
+    private IEnumerable<ITripartiteAxis> _velocityAxes = new List<TripartiteAxis> { new() };
     private IEnumerable<Section<SkiaSharpDrawingContext>> _sections =
         new List<Section<SkiaSharpDrawingContext>>();
     private DrawMarginFrame<SkiaSharpDrawingContext>? _drawMarginFrame;
@@ -57,17 +39,17 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         .TooltipFindingStrategy;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CartesianChart"/> class.
+    /// Initializes a new instance of the <see cref="TripartiteChart"/> class.
     /// </summary>
-    public CartesianChart()
+    public TripartiteChart()
         : this(null, null) { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CartesianChart"/> class.
+    /// Initializes a new instance of the <see cref="TripartiteChart"/> class.
     /// </summary>
     /// <param name="tooltip">The default tool tip control.</param>
     /// <param name="legend">The default legend control.</param>
-    public CartesianChart(
+    public TripartiteChart(
         IChartTooltip<SkiaSharpDrawingContext>? tooltip = null,
         IChartLegend<SkiaSharpDrawingContext>? legend = null
     )
@@ -78,12 +60,22 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
             OnDeepCollectionPropertyChanged,
             true
         );
-        _xObserver = new CollectionDeepObserver<ICartesianAxis>(
+        _xObserver = new CollectionDeepObserver<ITripartiteAxis>(
             OnDeepCollectionChanged,
             OnDeepCollectionPropertyChanged,
             true
         );
-        _yObserver = new CollectionDeepObserver<ICartesianAxis>(
+        _yObserver = new CollectionDeepObserver<ITripartiteAxis>(
+            OnDeepCollectionChanged,
+            OnDeepCollectionPropertyChanged,
+            true
+        );
+        _accelerationObserver = new CollectionDeepObserver<ITripartiteAxis>(
+            OnDeepCollectionChanged,
+            OnDeepCollectionPropertyChanged,
+            true
+        );
+        _velocityObserver = new CollectionDeepObserver<ITripartiteAxis>(
             OnDeepCollectionChanged,
             OnDeepCollectionPropertyChanged,
             true
@@ -94,17 +86,30 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
             true
         );
 
-        XAxes = new List<ICartesianAxis>()
+        XAxes = new List<ITripartiteAxis>()
         {
             LiveCharts
                 .DefaultSettings.GetProvider<SkiaSharpDrawingContext>()
-                .GetDefaultCartesianAxis()
+                .GetDefaultTripartiteAxis()
         };
-        YAxes = new List<ICartesianAxis>()
+        YAxes = new List<ITripartiteAxis>()
         {
             LiveCharts
                 .DefaultSettings.GetProvider<SkiaSharpDrawingContext>()
-                .GetDefaultCartesianAxis()
+                .GetDefaultTripartiteAxis()
+        };
+        // TODO:
+        AccelerationAxes = new List<ITripartiteAxis>()
+        {
+            LiveCharts
+                .DefaultSettings.GetProvider<SkiaSharpDrawingContext>()
+                .GetDefaultTripartiteAxis()
+        };
+        VelocityAxes = new List<ITripartiteAxis>()
+        {
+            LiveCharts
+                .DefaultSettings.GetProvider<SkiaSharpDrawingContext>()
+                .GetDefaultTripartiteAxis()
         };
         Series = new ObservableCollection<ISeries>();
         VisualElements = new ObservableCollection<ChartElement<SkiaSharpDrawingContext>>();
@@ -116,12 +121,12 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         c.MouseUp += OnMouseUp;
     }
 
-    CartesianChart<SkiaSharpDrawingContext> ICartesianChartView<SkiaSharpDrawingContext>.Core =>
+    TripartiteChart<SkiaSharpDrawingContext> ITripartiteChartView<SkiaSharpDrawingContext>.Core =>
         core is null
             ? throw new Exception("core not found")
-            : (CartesianChart<SkiaSharpDrawingContext>)core;
+            : (TripartiteChart<SkiaSharpDrawingContext>)core;
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.Series" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.Series" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public IEnumerable<ISeries> Series
     {
@@ -135,9 +140,9 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         }
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.XAxes" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.XAxes" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IEnumerable<ICartesianAxis> XAxes
+    public IEnumerable<ITripartiteAxis> XAxes
     {
         get => _xAxes;
         set
@@ -149,9 +154,9 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         }
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.YAxes" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.YAxes" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IEnumerable<ICartesianAxis> YAxes
+    public IEnumerable<ITripartiteAxis> YAxes
     {
         get => _yAxes;
         set
@@ -163,7 +168,35 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         }
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.Sections" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.AccelerationAxes" />
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IEnumerable<ITripartiteAxis> AccelerationAxes
+    {
+        get => _accelerationAxes;
+        set
+        {
+            _accelerationObserver?.Dispose(_accelerationAxes);
+            _accelerationObserver?.Initialize(value);
+            _accelerationAxes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.VelocityAxes" />
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IEnumerable<ITripartiteAxis> VelocityAxes
+    {
+        get => _velocityAxes;
+        set
+        {
+            _velocityObserver?.Dispose(_velocityAxes);
+            _velocityObserver?.Initialize(value);
+            _velocityAxes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.Sections" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public IEnumerable<Section<SkiaSharpDrawingContext>> Sections
     {
@@ -177,7 +210,7 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         }
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.DrawMarginFrame" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.DrawMarginFrame" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public DrawMarginFrame<SkiaSharpDrawingContext>? DrawMarginFrame
     {
@@ -189,15 +222,15 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         }
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.ZoomMode" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ZoomMode" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public ZoomAndPanMode ZoomMode { get; set; } = LiveCharts.DefaultSettings.ZoomMode;
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.ZoomingSpeed" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ZoomingSpeed" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public double ZoomingSpeed { get; set; } = LiveCharts.DefaultSettings.ZoomSpeed;
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.TooltipFindingStrategy" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.TooltipFindingStrategy" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public TooltipFindingStrategy TooltipFindingStrategy
     {
@@ -227,7 +260,7 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         zoomingSectionPaint.AddGeometryToPaintTask(motionCanvas.CanvasCore, zoomingSection);
         motionCanvas.CanvasCore.AddDrawableTask(zoomingSectionPaint);
 
-        core = new CartesianChart<SkiaSharpDrawingContext>(
+        core = new TripartiteChart<SkiaSharpDrawingContext>(
             this,
             config => config.UseDefaults(),
             motionCanvas.CanvasCore,
@@ -238,23 +271,31 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         core.Update();
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.ScaleUIPoint(LvcPoint, int, int)" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ScaleUIPoint(LvcPoint, int, int)" />
     [Obsolete("Use the ScalePixelsToData method instead.")]
     public double[] ScaleUIPoint(LvcPoint point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
         if (core is null)
             throw new Exception("core not found");
-        var cartesianCore = (CartesianChart<SkiaSharpDrawingContext>)core;
+        var cartesianCore = (TripartiteChart<SkiaSharpDrawingContext>)core;
         return cartesianCore.ScaleUIPoint(point, xAxisIndex, yAxisIndex);
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.ScalePixelsToData(LvcPointD, int, int)"/>
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ScalePixelsToData(LvcPointD, int, int)"/>
     public LvcPointD ScalePixelsToData(LvcPointD point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
-        if (core is not CartesianChart<SkiaSharpDrawingContext> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext> cc)
             throw new Exception("core not found");
-        var xScaler = new Scaler(cc.DrawMarginLocation, cc.DrawMarginSize, cc.XAxes[xAxisIndex]);
-        var yScaler = new Scaler(cc.DrawMarginLocation, cc.DrawMarginSize, cc.YAxes[yAxisIndex]);
+        var xScaler = new TripartiteScaler(
+            cc.DrawMarginLocation,
+            cc.DrawMarginSize,
+            cc.XAxes[xAxisIndex]
+        );
+        var yScaler = new TripartiteScaler(
+            cc.DrawMarginLocation,
+            cc.DrawMarginSize,
+            cc.YAxes[yAxisIndex]
+        );
 
         return new LvcPointD
         {
@@ -263,14 +304,22 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         };
     }
 
-    /// <inheritdoc cref="ICartesianChartView{TDrawingContext}.ScaleDataToPixels(LvcPointD, int, int)"/>
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ScaleDataToPixels(LvcPointD, int, int)"/>
     public LvcPointD ScaleDataToPixels(LvcPointD point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
-        if (core is not CartesianChart<SkiaSharpDrawingContext> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext> cc)
             throw new Exception("core not found");
 
-        var xScaler = new Scaler(cc.DrawMarginLocation, cc.DrawMarginSize, cc.XAxes[xAxisIndex]);
-        var yScaler = new Scaler(cc.DrawMarginLocation, cc.DrawMarginSize, cc.YAxes[yAxisIndex]);
+        var xScaler = new TripartiteScaler(
+            cc.DrawMarginLocation,
+            cc.DrawMarginSize,
+            cc.XAxes[xAxisIndex]
+        );
+        var yScaler = new TripartiteScaler(
+            cc.DrawMarginLocation,
+            cc.DrawMarginSize,
+            cc.YAxes[yAxisIndex]
+        );
 
         return new LvcPointD { X = xScaler.ToPixels(point.X), Y = yScaler.ToPixels(point.Y) };
     }
@@ -281,7 +330,7 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
         TooltipFindingStrategy strategy = TooltipFindingStrategy.Automatic
     )
     {
-        if (core is not CartesianChart<SkiaSharpDrawingContext> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext> cc)
             throw new Exception("core not found");
 
         if (strategy == TooltipFindingStrategy.Automatic)
@@ -293,7 +342,7 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
     /// <inheritdoc cref="IChartView{TDrawingContext}.GetVisualsAt(LvcPoint)"/>
     public override IEnumerable<VisualElement<SkiaSharpDrawingContext>> GetVisualsAt(LvcPoint point)
     {
-        return core is not CartesianChart<SkiaSharpDrawingContext> cc
+        return core is not TripartiteChart<SkiaSharpDrawingContext> cc
             ? throw new Exception("core not found")
             : cc.VisualElements.SelectMany(visual =>
                 ((VisualElement<SkiaSharpDrawingContext>)visual).IsHitBy(core, point)
@@ -314,7 +363,7 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
     {
         if (core is null)
             throw new Exception("core not found");
-        var c = (CartesianChart<SkiaSharpDrawingContext>)core;
+        var c = (TripartiteChart<SkiaSharpDrawingContext>)core;
         var p = e.Location;
         c.Zoom(new LvcPoint(p.X, p.Y), e.Delta > 0 ? ZoomDirection.ZoomIn : ZoomDirection.ZoomOut);
     }

@@ -13,4 +13,10 @@
     <ProjectReference Include="..\ViewModelsSamples\ViewModelsSamples.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Tripartite\Basic\View.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+  </ItemGroup>
+
 </Project>

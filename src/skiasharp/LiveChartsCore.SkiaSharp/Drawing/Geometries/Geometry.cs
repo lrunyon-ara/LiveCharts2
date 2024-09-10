@@ -57,36 +57,46 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
         _yProperty = RegisterMotionProperty(new FloatMotionProperty(nameof(Y), 0));
         _opacityProperty = RegisterMotionProperty(new FloatMotionProperty(nameof(Opacity), 1));
         _transformOriginProperty = RegisterMotionProperty(
-            new PointMotionProperty(nameof(TransformOrigin), new LvcPoint(0.5f, 0.5f)));
+            new PointMotionProperty(nameof(TransformOrigin), new LvcPoint(0.5f, 0.5f))
+        );
         _translateProperty = RegisterMotionProperty(
-            new PointMotionProperty(nameof(TranslateTransform), new LvcPoint(0, 0)));
+            new PointMotionProperty(nameof(TranslateTransform), new LvcPoint(0, 0))
+        );
         _rotationProperty = RegisterMotionProperty(
-            new FloatMotionProperty(nameof(RotateTransform), 0));
+            new FloatMotionProperty(nameof(RotateTransform), 0)
+        );
         _scaleProperty = RegisterMotionProperty(
-            new PointMotionProperty(nameof(ScaleTransform), new LvcPoint(1, 1)));
+            new PointMotionProperty(nameof(ScaleTransform), new LvcPoint(1, 1))
+        );
         _skewProperty = RegisterMotionProperty(
-            new PointMotionProperty(nameof(SkewTransform), new LvcPoint(1, 1)));
+            new PointMotionProperty(nameof(SkewTransform), new LvcPoint(1, 1))
+        );
         _transformProperty = RegisterMotionProperty(
-            new SKMatrixMotionProperty(nameof(Transform), SKMatrix.Identity));
+            new SKMatrixMotionProperty(nameof(Transform), SKMatrix.Identity)
+        );
     }
 
-    private bool HasTransform => _hasGeometryTransform || _hasTranslate || _hasRotation || _hasScale || _hasSkew || _hasTransform;
+    private bool HasTransform =>
+        _hasGeometryTransform
+        || _hasTranslate
+        || _hasRotation
+        || _hasScale
+        || _hasSkew
+        || _hasTransform;
 
     /// <inheritdoc cref="IGeometry{TDrawingContext}.X" />
     public float X
     {
-        get => Parent is null
-            ? _xProperty.GetMovement(this)
-            : _xProperty.GetMovement(this) + Parent.X;
+        get =>
+            Parent is null ? _xProperty.GetMovement(this) : _xProperty.GetMovement(this) + Parent.X;
         set => _xProperty.SetMovement(value, this);
     }
 
     /// <inheritdoc cref="IGeometry{TDrawingContext}.Y" />
     public float Y
     {
-        get => Parent is null
-            ? _yProperty.GetMovement(this)
-            : _yProperty.GetMovement(this) + Parent.Y;
+        get =>
+            Parent is null ? _yProperty.GetMovement(this) : _yProperty.GetMovement(this) + Parent.Y;
         set => _yProperty.SetMovement(value, this);
     }
 
@@ -158,7 +168,11 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
     }
 
     /// <inheritdoc cref="IPaintable{TDrawingContext}.Opacity" />
-    public float Opacity { get => _opacityProperty.GetMovement(this); set => _opacityProperty.SetMovement(value, this); }
+    public float Opacity
+    {
+        get => _opacityProperty.GetMovement(this);
+        set => _opacityProperty.SetMovement(value, this);
+    }
 
     /// <inheritdoc cref="IPaintable{TDrawingContext}.Stroke" />
     public IPaint<SkiaSharpDrawingContext>? Stroke { get; set; }
@@ -226,9 +240,20 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
 
         if (Fill is null && Stroke is null)
         {
-            if (hasGeometryOpacity) context.PaintTask.ApplyOpacityMask(context, this);
+            if (hasGeometryOpacity)
+                context.PaintTask.ApplyOpacityMask(context, this);
+
+            // TODO: part 2
+            var p = new SKPaint
+            {
+                Color = SKColors.Red, // Set the paint color
+                StrokeWidth = 2, // Set the stroke width
+                IsAntialias = true, // Enable antialiasing for smoother lines
+                Style = SKPaintStyle.Stroke // Set the paint style to stroke (outline)
+            };
             OnDraw(context, context.Paint);
-            if (hasGeometryOpacity) context.PaintTask.RestoreOpacityMask(context, this);
+            if (hasGeometryOpacity)
+                context.PaintTask.RestoreOpacityMask(context, this);
         }
         else
         {
@@ -243,9 +268,11 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
                 Fill.IsStroke = false;
                 Fill.InitializeTask(context);
 
-                if (hasGeometryOpacity) Fill.ApplyOpacityMask(context, this);
+                if (hasGeometryOpacity)
+                    Fill.ApplyOpacityMask(context, this);
                 OnDraw(context, context.Paint);
-                if (hasGeometryOpacity) Fill.RestoreOpacityMask(context, this);
+                if (hasGeometryOpacity)
+                    Fill.RestoreOpacityMask(context, this);
 
                 Fill.Dispose();
             }
@@ -255,9 +282,11 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
                 Stroke.IsStroke = true;
                 Stroke.InitializeTask(context);
 
-                if (hasGeometryOpacity) Stroke.ApplyOpacityMask(context, this);
+                if (hasGeometryOpacity)
+                    Stroke.ApplyOpacityMask(context, this);
                 OnDraw(context, context.Paint);
-                if (hasGeometryOpacity) Stroke.RestoreOpacityMask(context, this);
+                if (hasGeometryOpacity)
+                    Stroke.RestoreOpacityMask(context, this);
 
                 Stroke.Dispose();
             }
@@ -266,7 +295,8 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
             context.PaintTask = originalTask;
         }
 
-        if (HasTransform) context.Canvas.Restore();
+        if (HasTransform)
+            context.Canvas.Restore();
     }
 
     /// <summary>
@@ -291,15 +321,22 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
             const double toRadians = Math.PI / 180;
 
             r %= 360;
-            if (r < 0) r += 360;
+            if (r < 0)
+                r += 360;
 
-            if (r > 180) r = 360 - r;
-            if (r is > 90 and <= 180) r = 180 - r;
+            if (r > 180)
+                r = 360 - r;
+            if (r is > 90 and <= 180)
+                r = 180 - r;
 
             var rRadians = r * toRadians;
 
-            var w = (float)(Math.Cos(rRadians) * measure.Width + Math.Sin(rRadians) * measure.Height);
-            var h = (float)(Math.Sin(rRadians) * measure.Width + Math.Cos(rRadians) * measure.Height);
+            var w = (float)(
+                Math.Cos(rRadians) * measure.Width + Math.Sin(rRadians) * measure.Height
+            );
+            var h = (float)(
+                Math.Sin(rRadians) * measure.Width + Math.Cos(rRadians) * measure.Height
+            );
 
             measure = new LvcSize(w, h);
         }
