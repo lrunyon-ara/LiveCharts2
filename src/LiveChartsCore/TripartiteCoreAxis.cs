@@ -22,6 +22,16 @@
 
 // Ignore Spelling: Crosshair Subticks Subseparators
 
+// TODO: we need to fix the scaler to work with the new orientations
+
+// TODO: update: modify TripartiteAxis.GetNextScaler to return two scalers
+
+// TODO: update, maybe figure out how to avoid using extra axes
+
+// TODO; update: need to find a way to have multiple scales in the same core axis
+
+// .AddDrawableTask
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -116,11 +126,14 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     #region properties
 
+    // X offset
     float ITripartiteAxis.Xo
     {
         get => _xo;
         set => _xo = value;
     }
+
+    // Y Offset
     float ITripartiteAxis.Yo
     {
         get => _yo;
@@ -437,7 +450,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
     {
         _stepCount = 0;
 
-        var TripartiteChart = (TripartiteChart<TDrawingContext>)chart;
+        var TripartiteChart = (TripartiteChart<TDrawingContext, TLineGeometry>)chart;
 
         var controlSize = TripartiteChart.ControlSize;
         var drawLocation = TripartiteChart.DrawMarginLocation;
@@ -470,7 +483,14 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                 NamePaint.ZIndex = -1;
             TripartiteChart.Canvas.AddDrawableTask(NamePaint);
         }
-        if (LabelsPaint is not null)
+        // TODO: temp
+        if (
+            LabelsPaint is not null
+            && (
+                _orientation != TripartiteAxisOrientation.Acceleration
+                && _orientation != TripartiteAxisOrientation.Displacement
+            )
+        )
         {
             if (LabelsPaint.ZIndex == 0)
                 LabelsPaint.ZIndex = -0.9;
@@ -498,7 +518,8 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             TripartiteChart.Canvas.AddDrawableTask(SeparatorsPaint);
         }
 
-        // TODO: ticks for velocity and acceleration
+        // TODO: ticks for displacement and acceleration
+        // not related to seperators, I don't think
         var ticksClipRectangle =
             _orientation == TripartiteAxisOrientation.X
                 ? new LvcRectangle(
@@ -511,8 +532,8 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                         new LvcSize(controlSize.Width, drawMarginSize.Height)
                     )
                     : new LvcRectangle(
-                        new LvcPoint(drawLocation.X, 0),
-                        new LvcSize(drawMarginSize.Width, controlSize.Height)
+                        new LvcPoint(0, drawLocation.Y),
+                        new LvcSize(controlSize.Width, drawMarginSize.Height)
                     );
 
         if (TicksPaint is not null)
@@ -530,26 +551,30 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             TripartiteChart.Canvas.AddDrawableTask(SubticksPaint);
         }
 
-        var lyi = drawLocation.Y;
-        var lyj = drawLocation.Y + drawMarginSize.Height;
-        var lxi = drawLocation.X;
-        var lxj = drawLocation.X + drawMarginSize.Width;
+        var drawStartY = drawLocation.Y;
+        var drawEndY = drawLocation.Y + drawMarginSize.Height;
+        var drawStartX = drawLocation.X;
+        var drawEndX = drawLocation.X + drawMarginSize.Width;
 
-        float xoo = 0f,
-            yoo = 0f;
+        float xOffset = 0f,
+            yOffset = 0f;
 
-        //TODO:
         if (_orientation == TripartiteAxisOrientation.X)
         {
-            yoo = _position == AxisPosition.Start ? controlSize.Height - _yo : _yo;
+            yOffset = _position == AxisPosition.Start ? controlSize.Height - _yo : _yo;
         }
         else if (_orientation == TripartiteAxisOrientation.Y)
         {
-            xoo = _position == AxisPosition.Start ? _xo : controlSize.Width - _xo;
+            xOffset = _position == AxisPosition.Start ? _xo : controlSize.Width - _xo;
         }
+        // Axis position is irrelevant for displacement and Acceleration
         else
         {
-            yoo = _position == AxisPosition.Start ? controlSize.Height - _yo : _yo;
+            //yoo = controlSize.Height - _yo;
+            //xoo = _xo;
+            // I belive both should always be zero since there is no labels for this axis
+            yOffset = _yo;
+            xOffset = controlSize.Width - _xo;
         }
 
         var size = (float)TextSize;
@@ -563,7 +588,14 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
         }
 
         if (Name is not null && NamePaint is not null)
-            DrawName(TripartiteChart, (float)NameTextSize, lxi, lxj, lyi, lyj);
+            DrawName(
+                TripartiteChart,
+                (float)NameTextSize,
+                drawStartX,
+                drawEndX,
+                drawStartY,
+                drawEndY
+            );
 
         if (NamePaint is not null && _nameGeometry is not null)
             NamePaint.AddGeometryToPaintTask(TripartiteChart.Canvas, _nameGeometry);
@@ -578,6 +610,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
         var measured = new HashSet<AxisVisualSeprator<TDrawingContext>>();
 
+        // TODO:
         if (ZeroPaint is not null)
         {
             float x,
@@ -585,17 +618,12 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             if (_orientation == TripartiteAxisOrientation.X)
             {
                 x = scale.ToPixels(0);
-                y = yoo;
-            }
-            else if (_orientation == TripartiteAxisOrientation.Y)
-            {
-                x = xoo;
-                y = scale.ToPixels(0);
+                y = yOffset;
             }
             else
             {
-                x = scale.ToPixels(0);
-                y = yoo;
+                x = xOffset;
+                y = scale.ToPixels(0);
             }
 
             if (ZeroPaint.ZIndex == 0)
@@ -611,12 +639,31 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                 _zeroLine = new TLineGeometry();
                 ZeroPaint.AddGeometryToPaintTask(TripartiteChart.Canvas, _zeroLine);
                 InitializeLine(_zeroLine, TripartiteChart);
-                UpdateSeparator(_zeroLine, x, y, lxi, lxj, lyi, lyj, UpdateMode.UpdateAndComplete);
+                UpdateSeparator(
+                    _zeroLine,
+                    x,
+                    y,
+                    drawStartX,
+                    drawEndX,
+                    drawStartY,
+                    drawEndY,
+                    UpdateMode.UpdateAndComplete
+                );
             }
 
-            UpdateSeparator(_zeroLine, x, y, lxi, lxj, lyi, lyj, UpdateMode.Update);
+            UpdateSeparator(
+                _zeroLine,
+                x,
+                y,
+                drawStartX,
+                drawEndX,
+                drawStartY,
+                drawEndY,
+                UpdateMode.Update
+            );
         }
 
+        // TODO:
         if (TicksPaint is not null && _drawTicksPath)
         {
             if (_ticksPath is null)
@@ -629,27 +676,27 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             // TODO: tripartite acceleration and velocoity
             if (_orientation == TripartiteAxisOrientation.X)
             {
-                var yp = yoo + _size.Height * 0.5f * (_position == AxisPosition.Start ? -1 : 1);
-                _ticksPath.X = lxi;
-                _ticksPath.X1 = lxj;
+                var yp = yOffset + _size.Height * 0.5f * (_position == AxisPosition.Start ? -1 : 1);
+                _ticksPath.X = drawStartX;
+                _ticksPath.X1 = drawEndX;
                 _ticksPath.Y = yp;
                 _ticksPath.Y1 = yp;
             }
             else if (_orientation == TripartiteAxisOrientation.Y)
             {
-                var xp = xoo + _size.Width * 0.5f * (_position == AxisPosition.Start ? 1 : -1);
+                var xp = xOffset + _size.Width * 0.5f * (_position == AxisPosition.Start ? 1 : -1);
                 _ticksPath.X = xp;
                 _ticksPath.X1 = xp;
-                _ticksPath.Y = lyi;
-                _ticksPath.Y1 = lyj;
+                _ticksPath.Y = drawStartY;
+                _ticksPath.Y1 = drawEndY;
             }
             else
             {
-                var yp = yoo + _size.Height * 0.5f * (_position == AxisPosition.Start ? -1 : 1);
-                _ticksPath.X = lxi;
-                _ticksPath.X1 = lxj;
-                _ticksPath.Y = yp;
-                _ticksPath.Y1 = yp;
+                var xp = xOffset + _size.Width * 0.5f * (_position == AxisPosition.Start ? 1 : -1);
+                _ticksPath.X = xp;
+                _ticksPath.X1 = xp;
+                _ticksPath.Y = drawStartY;
+                _ticksPath.Y1 = drawEndY;
             }
 
             if (!_animatableBounds.HasPreviousState)
@@ -663,27 +710,34 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             sxco = 0f,
             syco = 0f;
 
-        var uw = scale.MeasureInPixels(_unitWidth);
+        // will be one unless there is a custom scale
+        var unitWidth = scale.MeasureInPixels(_unitWidth);
+
         if (!_ticksAtCenter && _orientation == TripartiteAxisOrientation.X)
-            txco = uw * 0.5f;
+            txco = unitWidth * 0.5f;
         if (!_ticksAtCenter && _orientation == TripartiteAxisOrientation.Y)
-            tyco = uw * 0.5f;
+            tyco = unitWidth * 0.5f;
         // TODO: tripartite acceleration and velocoity
         if (
             (!_ticksAtCenter && _orientation == TripartiteAxisOrientation.Acceleration)
-            || (!_ticksAtCenter && _orientation == TripartiteAxisOrientation.Velocity)
+            || (!_ticksAtCenter && _orientation == TripartiteAxisOrientation.Displacement)
         )
-            txco = uw * 0.5f;
+        {
+            txco = unitWidth * 0.5f;
+            tyco = unitWidth * 0.5f;
+        }
         if (!_separatorsAtCenter && _orientation == TripartiteAxisOrientation.X)
-            sxco = uw * 0.5f;
+            sxco = unitWidth * 0.5f;
         if (!_separatorsAtCenter && _orientation == TripartiteAxisOrientation.Y)
-            sxco = uw * 0.5f;
+            sxco = unitWidth * 0.5f;
         // TODO: tripartite acceleration and velocoity
         if (
             (!_separatorsAtCenter && _orientation == TripartiteAxisOrientation.Acceleration)
-            || (!_separatorsAtCenter && _orientation == TripartiteAxisOrientation.Velocity)
+            || (!_separatorsAtCenter && _orientation == TripartiteAxisOrientation.Displacement)
         )
-            sxco = uw * 0.5f;
+        {
+            sxco = unitWidth * 0.5f;
+        }
 
         var axisTick = this.GetTick(drawMarginSize, null);
         var s = axisTick.Value;
@@ -693,6 +747,17 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             s = _minStep;
 
         var start = Math.Truncate(min / s) * s;
+
+        // if start 0 and max 10, and s .5
+        // ex: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
+
+        // TODO: decide if I should make a new loop or use old
+
+        //TODO: remove
+        if (_orientation == TripartiteAxisOrientation.Acceleration)
+        {
+            var test = EnumerateSeparators(start, max, s);
+        }
 
         foreach (var i in EnumerateSeparators(start, max, s))
         {
@@ -705,35 +770,44 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             if (_orientation == TripartiteAxisOrientation.X)
             {
                 x = scale.ToPixels(i);
-                y = yoo;
+                y = yOffset;
             }
             else if (_orientation == TripartiteAxisOrientation.Y)
             {
-                x = xoo;
+                x = xOffset;
                 y = scale.ToPixels(i);
             }
             else
             {
-                x = scale.ToPixels(i);
-                y = yoo;
+                // TODO: this is only for ticks=
+                //x = xoo;
+                //y = yoo;
+                x = xOffset;
+                y = scale.ToPixels(i);
             }
 
+            // TODO: start here
             float yc;
             float xc;
             if (_orientation == TripartiteAxisOrientation.X)
             {
                 xc = actualScale.ToPixels(i);
-                yc = yoo;
+                yc = yOffset;
             }
             else if (_orientation == TripartiteAxisOrientation.Y)
             {
-                xc = xoo;
+                xc = xOffset;
+                yc = actualScale.ToPixels(i);
+            }
+            else if (_orientation == TripartiteAxisOrientation.Acceleration)
+            {
+                xc = actualScale.ToPixels(i);
                 yc = actualScale.ToPixels(i);
             }
             else
             {
-                xc = actualScale.ToPixels(i);
-                yc = yoo;
+                xc = xOffset;
+                yc = actualScale.ToPixels(i);
             }
 
             if (!separators.TryGetValue(separatorKey, out var visualSeparator))
@@ -750,17 +824,17 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                 && visualSeparator.Separator is null
             )
             {
-                // TODO: could be here as well
+                //TODO: could be here as well
+                //TODO: figure out what each of these vars mean
                 InitializeSeparator(visualSeparator, TripartiteChart);
                 UpdateSeparator(
-                    //TODO: figure out what each of these vars mean
                     visualSeparator.Separator!,
                     xc + sxco,
                     yc + syco,
-                    lxi,
-                    lxj,
-                    lyi,
-                    lyj,
+                    drawStartX,
+                    drawEndX,
+                    drawStartY,
+                    drawEndY,
                     UpdateMode.UpdateAndComplete
                 );
             }
@@ -780,10 +854,10 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                     s,
                     xc + sxco,
                     yc + syco,
-                    lxi,
-                    lxj,
-                    lyi,
-                    lyj,
+                    drawStartX,
+                    drawEndX,
+                    drawStartY,
+                    drawEndY,
                     UpdateMode.UpdateAndComplete
                 );
             }
@@ -814,7 +888,15 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                     UpdateMode.UpdateAndComplete
                 );
             }
-            if (LabelsPaint is not null && visualSeparator.Label is null)
+            //TODO: temp
+            if (
+                LabelsPaint is not null
+                && visualSeparator.Label is null
+                && (
+                    _orientation != TripartiteAxisOrientation.Acceleration
+                    && _orientation != TripartiteAxisOrientation.Displacement
+                )
+            )
             {
                 IntializeLabel(visualSeparator, TripartiteChart, size, hasRotation, r);
                 UpdateLabel(
@@ -855,7 +937,15 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                             subtick
                         );
 
-            if (LabelsPaint is not null && visualSeparator.Label is not null)
+            // TODO: temp
+            if (
+                LabelsPaint is not null
+                && visualSeparator.Label is not null
+                && (
+                    _orientation != TripartiteAxisOrientation.Acceleration
+                    && _orientation != TripartiteAxisOrientation.Displacement
+                )
+            )
                 LabelsPaint.AddGeometryToPaintTask(TripartiteChart.Canvas, visualSeparator.Label);
             if (TicksPaint is not null && visualSeparator.Tick is not null)
                 TicksPaint.AddGeometryToPaintTask(TripartiteChart.Canvas, visualSeparator.Tick);
@@ -863,17 +953,20 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                 foreach (var subtick in visualSeparator.Subticks)
                     SubticksPaint.AddGeometryToPaintTask(TripartiteChart.Canvas, subtick);
 
-            if (visualSeparator.Separator is not null)
-                UpdateSeparator(
-                    visualSeparator.Separator,
-                    x + sxco,
-                    y + syco,
-                    lxi,
-                    lxj,
-                    lyi,
-                    lyj,
-                    UpdateMode.Update
-                );
+            //if (visualSeparator.Separator is not null)
+            //{
+            //    UpdateSeparator(
+            //        visualSeparator.Separator,
+            //        x + sxco,
+            //        y + syco,
+            //        drawStartX,
+            //        drawEndX,
+            //        drawStartY,
+            //        lyj,
+            //        UpdateMode.Update
+            //    );
+            //}
+
             if (visualSeparator.Subseparators is not null)
                 UpdateSubseparators(
                     visualSeparator.Subseparators,
@@ -881,10 +974,10 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                     s,
                     x + sxco,
                     y + tyco,
-                    lxi,
-                    lxj,
-                    lyi,
-                    lyj,
+                    drawStartX,
+                    drawEndX,
+                    drawStartY,
+                    drawEndY,
                     UpdateMode.Update
                 );
             if (visualSeparator.Tick is not null)
@@ -933,30 +1026,30 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             if (_orientation == TripartiteAxisOrientation.X)
             {
                 x = scale.ToPixels(separator.Value);
-                y = yoo;
+                y = yOffset;
             }
             else if (_orientation == TripartiteAxisOrientation.Y)
             {
-                x = xoo;
+                x = xOffset;
                 y = scale.ToPixels(separator.Value);
             }
             else
             {
-                x = scale.ToPixels(separator.Value);
-                y = yoo;
+                x = xOffset;
+                y = scale.ToPixels(separator.Value);
             }
 
-            if (separator.Separator is not null)
-                UpdateSeparator(
-                    separator.Separator,
-                    x + sxco,
-                    y + syco,
-                    lxi,
-                    lxj,
-                    lyi,
-                    lyj,
-                    UpdateMode.UpdateAndRemove
-                );
+            //if (separator.Separator is not null)
+            //    UpdateSeparator(
+            //        separator.Separator,
+            //        x + sxco,
+            //        y + syco,
+            //        drawStartX,
+            //        drawEndX,
+            //        drawStartY,
+            //        lyj,
+            //        UpdateMode.UpdateAndRemove
+            //    );
             if (separator.Subseparators is not null)
                 UpdateSubseparators(
                     separator.Subseparators,
@@ -964,10 +1057,10 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
                     s,
                     x + sxco,
                     y + syco,
-                    lxi,
-                    lxj,
-                    lyi,
-                    lyj,
+                    drawStartX,
+                    drawEndX,
+                    drawStartY,
+                    drawEndY,
                     UpdateMode.UpdateAndRemove
                 );
             if (separator.Tick is not null)
@@ -1005,7 +1098,10 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
     /// <inheritdoc cref="ITripartiteAxis{TDrawingContext}.InvalidateCrosshair(Chart{TDrawingContext}, LvcPoint)"/>
     public void InvalidateCrosshair(Chart<TDrawingContext> chart, LvcPoint pointerPosition)
     {
-        if (CrosshairPaint is null || chart is not TripartiteChart<TDrawingContext> TripartiteChart)
+        if (
+            CrosshairPaint is null
+            || chart is not TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart
+        )
             return;
 
         var location = chart.DrawMarginLocation;
@@ -1027,10 +1123,10 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
         var drawMarginSize = TripartiteChart.DrawMarginSize;
         double labelValue;
 
-        var lyi = drawLocation.Y;
-        var lyj = drawLocation.Y + drawMarginSize.Height;
-        var lxi = drawLocation.X;
-        var lxj = drawLocation.X + drawMarginSize.Width;
+        var drawStartY = drawLocation.Y;
+        var drawEndY = drawLocation.Y + drawMarginSize.Height;
+        var drawStartX = drawLocation.X;
+        var drawEndX = drawLocation.X + drawMarginSize.Width;
 
         float xoo = 0f,
             yoo = 0f;
@@ -1116,7 +1212,16 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
         if (_crosshairLine is null)
         {
             _crosshairLine = new TLineGeometry();
-            UpdateSeparator(_crosshairLine, x, y, lxi, lxj, lyi, lyj, UpdateMode.UpdateAndComplete);
+            UpdateSeparator(
+                _crosshairLine,
+                x,
+                y,
+                drawStartX,
+                drawEndX,
+                drawStartY,
+                drawEndY,
+                UpdateMode.UpdateAndComplete
+            );
         }
         CrosshairPaint.AddGeometryToPaintTask(TripartiteChart.Canvas, _crosshairLine);
 
@@ -1164,7 +1269,16 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
             CrosshairLabelsPaint.AddGeometryToPaintTask(TripartiteChart.Canvas, _crosshairLabel);
         }
 
-        UpdateSeparator(_crosshairLine, x, y, lxi, lxj, lyi, lyj, UpdateMode.Update);
+        UpdateSeparator(
+            _crosshairLine,
+            x,
+            y,
+            drawStartX,
+            drawEndX,
+            drawStartY,
+            drawEndY,
+            UpdateMode.Update
+        );
 
         chart.Canvas.Invalidate();
     }
@@ -1195,7 +1309,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     private static ChartPoint? FindClosestPoint(
         LvcPoint pointerPosition,
-        TripartiteChart<TDrawingContext> TripartiteChart,
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart,
         IEnumerable<ICartesianSeries<TDrawingContext>> allSeries
     )
     {
@@ -1475,7 +1589,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
     }
 
     private void DrawName(
-        TripartiteChart<TDrawingContext> TripartiteChart,
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart,
         float size,
         float lxi,
         float lxj,
@@ -1552,7 +1666,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     private void InitializeSeparator(
         AxisVisualSeprator<TDrawingContext> visualSeparator,
-        TripartiteChart<TDrawingContext> TripartiteChart,
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart,
         TLineGeometry? separatorGeometry = null
     )
     {
@@ -1574,7 +1688,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     private void InitializeSubseparators(
         AxisVisualSeprator<TDrawingContext> visualSeparator,
-        TripartiteChart<TDrawingContext> TripartiteChart
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart
     )
     {
         visualSeparator.Subseparators = new TLineGeometry[_subseparatorsCount];
@@ -1589,7 +1703,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     private void InitializeLine(
         ILineGeometry<TDrawingContext> lineGeometry,
-        TripartiteChart<TDrawingContext> TripartiteChart
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart
     )
     {
         lineGeometry.Animate(
@@ -1600,7 +1714,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     private void InitializeTick(
         AxisVisualSeprator<TDrawingContext> visualSeparator,
-        TripartiteChart<TDrawingContext> TripartiteChart,
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart,
         TLineGeometry? subTickGeometry = null
     )
     {
@@ -1624,7 +1738,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     private void InitializeSubticks(
         AxisVisualSeprator<TDrawingContext> visualSeparator,
-        TripartiteChart<TDrawingContext> TripartiteChart
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart
     )
     {
         visualSeparator.Subticks = new TLineGeometry[_subseparatorsCount];
@@ -1639,7 +1753,7 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
 
     private void IntializeLabel(
         AxisVisualSeprator<TDrawingContext> visualSeparator,
-        TripartiteChart<TDrawingContext> TripartiteChart,
+        TripartiteChart<TDrawingContext, TLineGeometry> TripartiteChart,
         float size,
         bool hasRotation,
         float r
@@ -1660,10 +1774,10 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
         ILineGeometry<TDrawingContext> line,
         float x,
         float y,
-        float lxi,
-        float lxj,
-        float lyi,
-        float lyj,
+        float drawStartX,
+        float drawEndX,
+        float drawStartY,
+        float drawEndY,
         UpdateMode mode
     )
     {
@@ -1671,23 +1785,17 @@ public abstract class TripartiteCoreAxis<TDrawingContext, TTextGeometry, TLineGe
         {
             line.X = x;
             line.X1 = x;
-            line.Y = lyi;
-            line.Y1 = lyj;
+            line.Y = drawStartY;
+            line.Y1 = drawEndY;
         }
         else if (_orientation == TripartiteAxisOrientation.Y)
         {
-            line.X = lxi;
-            line.X1 = lxj;
+            line.X = drawStartX;
+            line.X1 = drawEndX;
             line.Y = y;
             line.Y1 = y;
         }
-        else
-        {
-            line.X = x;
-            line.X1 = x;
-            line.Y = lyi;
-            line.Y1 = lyj;
-        }
+        else { }
 
         SetUpdateMode(line, mode);
     }

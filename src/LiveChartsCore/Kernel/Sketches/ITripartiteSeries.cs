@@ -30,10 +30,11 @@ namespace LiveChartsCore.Kernel.Sketches;
 /// </summary>
 /// <typeparam name="TDrawingContext">The type of the drawing context.</typeparam>
 /// <seealso cref="IChartSeries{TDrawingContext}" />
-public interface ITripartiteSeries<TDrawingContext> : IChartSeries<TDrawingContext>
+public interface ITripartiteSeries<TDrawingContext, TLineGeometry> : IChartSeries<TDrawingContext>
     where TDrawingContext : DrawingContext
+    where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
 {
-    // TODO: scale velocity and acceleration axes
+    // TODO: scale displacement and acceleration axes
 
     /// <summary>
     /// Gets or sets the axis index where the series is scaled in the X plane, the index must exist
@@ -85,7 +86,7 @@ public interface ITripartiteSeries<TDrawingContext> : IChartSeries<TDrawingConte
     /// <param name="y">The y.</param>
     /// <returns>the series bounds</returns>
     SeriesBounds GetBounds(
-        TripartiteChart<TDrawingContext> chart,
+        TripartiteChart<TDrawingContext, TLineGeometry> chart,
         ITripartiteAxis x,
         ITripartiteAxis y
     );

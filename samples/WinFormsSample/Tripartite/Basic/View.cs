@@ -11,16 +11,17 @@ public partial class View : UserControl
     public View()
     {
         InitializeComponent();
-        Size = new System.Drawing.Size(50, 50);
+        Size = new System.Drawing.Size(70, 70);
 
         var viewModel = new ViewModel();
 
         tripartiteChart = new TripartiteChart
         {
             //Series = viewModel.Series,
-
-            //AccelerationAxes = viewModel.AccelerationAxes,
-            VelocityAxes = viewModel.VelocityAxes,
+            //XAxes = viewModel.XAxes,
+            AccelerationAxes = viewModel.AccelerationAxes,
+            DiagonalAxesPaint = viewModel.DiagonalAxesPaint,
+            //DisplacementAxes = viewModel.DisplacementAxes,
             Title = viewModel.Title,
             DrawMarginFrame = viewModel.DrawMarginFrame,
             // out of livecharts properties...

@@ -32,8 +32,9 @@ namespace LiveChartsCore.Kernel.Sketches;
 /// </summary>
 /// <typeparam name="TDrawingContext">The type of the drawing context.</typeparam>
 /// <seealso cref="IChartView{TDrawingContext}" />
-public interface ITripartiteChartView<TDrawingContext> : IChartView<TDrawingContext>
+public interface ITripartiteChartView<TDrawingContext, TLineGeometry> : IChartView<TDrawingContext>
     where TDrawingContext : DrawingContext
+    where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
 {
     /// <summary>
     /// Gets the core.
@@ -41,7 +42,7 @@ public interface ITripartiteChartView<TDrawingContext> : IChartView<TDrawingCont
     /// <value>
     /// The core.
     /// </value>
-    TripartiteChart<TDrawingContext> Core { get; }
+    TripartiteChart<TDrawingContext, TLineGeometry> Core { get; }
 
     /// <summary>
     /// Gets or sets the x axes.
@@ -68,12 +69,12 @@ public interface ITripartiteChartView<TDrawingContext> : IChartView<TDrawingCont
     IEnumerable<ITripartiteAxis> AccelerationAxes { get; set; }
 
     /// <summary>
-    /// Gets or sets the velocity axes.
+    /// Gets or sets the displacement axes.
     /// </summary>
     /// <value>
     /// The y axes.
     /// </value>
-    IEnumerable<ITripartiteAxis> VelocityAxes { get; set; }
+    IEnumerable<ITripartiteAxis> DisplacementAxes { get; set; }
 
     /// <summary>
     /// Gets or sets the sections.
@@ -98,6 +99,14 @@ public interface ITripartiteChartView<TDrawingContext> : IChartView<TDrawingCont
     /// The draw margin frame.
     /// </value>
     DrawMarginFrame<TDrawingContext>? DrawMarginFrame { get; set; }
+
+    /// <summary>
+    /// Gets or sets the daigonal axes paint
+    /// </summary>
+    /// <value>
+    /// The diagonal axes paint.
+    /// </value>
+    IPaint<TDrawingContext>? DiagonalAxesPaint { get; set; }
 
     /// <summary>
     /// Gets or sets the zoom mode.

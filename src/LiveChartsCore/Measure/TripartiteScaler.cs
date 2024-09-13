@@ -53,13 +53,15 @@ public class TripartiteScaler
         LvcPoint drawMarginLocation,
         LvcSize drawMarginSize,
         ITripartiteAxis axis,
+        //TODO: remove
+        TripartiteAxisOrientation orientation,
         Bounds? bounds = null
     )
     {
         if (axis.Orientation == TripartiteAxisOrientation.Unknown)
             throw new Exception("The axis is not ready to be scaled.");
 
-        _orientation = axis.Orientation;
+        _orientation = orientation;
 
         var actualBounds = axis.DataBounds;
         var actualVisibleBounds = axis.VisibleDataBounds;
@@ -74,7 +76,7 @@ public class TripartiteScaler
             maxLimit = null;
         }
 
-        // TODO: handle velocity and acceleration
+        // TODO: handle displacement and acceleration
         if (axis.Orientation == TripartiteAxisOrientation.X)
         {
             _minPx = drawMarginLocation.X;
@@ -99,6 +101,40 @@ public class TripartiteScaler
                     : actualVisibleBounds.Min;
 
                 AxisLimit.ValidateLimits(ref visibleMin, ref visibleMax);
+
+                if (visibleMax != MaxVal || visibleMin != MinVal)
+                {
+                    MaxVal = visibleMax;
+                    MinVal = visibleMin;
+                }
+            }
+
+            _deltaVal = MaxVal - MinVal;
+        }
+        else if (axis.Orientation == TripartiteAxisOrientation.Y)
+        {
+            _minPx = drawMarginLocation.Y;
+            _maxPx = drawMarginLocation.Y + drawMarginSize.Height;
+            _deltaPx = _maxPx - _minPx;
+
+            MaxVal = axis.IsInverted ? actualBounds.Max : actualBounds.Min;
+            MinVal = axis.IsInverted ? actualBounds.Min : actualBounds.Max;
+
+            if (maxLimit is not null || minLimit is not null)
+            {
+                MaxVal = axis.IsInverted ? maxLimit ?? MinVal : minLimit ?? MaxVal;
+                MinVal = axis.IsInverted ? minLimit ?? MaxVal : maxLimit ?? MinVal;
+            }
+            else
+            {
+                var visibleMax = axis.IsInverted
+                    ? actualVisibleBounds.Max
+                    : actualVisibleBounds.Min;
+                var visibleMin = axis.IsInverted
+                    ? actualVisibleBounds.Min
+                    : actualVisibleBounds.Max;
+
+                AxisLimit.ValidateLimits(ref visibleMax, ref visibleMin);
 
                 if (visibleMax != MaxVal || visibleMin != MinVal)
                 {

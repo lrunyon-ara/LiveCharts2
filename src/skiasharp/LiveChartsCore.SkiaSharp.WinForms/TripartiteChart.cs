@@ -18,25 +18,26 @@ using SkiaSharp;
 namespace LiveChartsCore.SkiaSharpView.WinForms;
 
 /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}" />
-public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingContext>
+public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingContext, LineGeometry>
 {
     private readonly CollectionDeepObserver<ISeries> _seriesObserver;
     private readonly CollectionDeepObserver<ITripartiteAxis> _xObserver;
     private readonly CollectionDeepObserver<ITripartiteAxis> _yObserver;
     private readonly CollectionDeepObserver<ITripartiteAxis> _accelerationObserver;
-    private readonly CollectionDeepObserver<ITripartiteAxis> _velocityObserver;
+    private readonly CollectionDeepObserver<ITripartiteAxis> _displacementObserver;
     private readonly CollectionDeepObserver<Section<SkiaSharpDrawingContext>> _sectionsObserver;
     private IEnumerable<ISeries> _series = new List<ISeries>();
     private IEnumerable<ITripartiteAxis> _xAxes = new List<TripartiteAxis> { new() };
     private IEnumerable<ITripartiteAxis> _yAxes = new List<TripartiteAxis> { new() };
     private IEnumerable<ITripartiteAxis> _accelerationAxes = new List<TripartiteAxis> { new() };
-    private IEnumerable<ITripartiteAxis> _velocityAxes = new List<TripartiteAxis> { new() };
+    private IEnumerable<ITripartiteAxis> _displacementAxes = new List<TripartiteAxis> { new() };
     private IEnumerable<Section<SkiaSharpDrawingContext>> _sections =
         new List<Section<SkiaSharpDrawingContext>>();
     private DrawMarginFrame<SkiaSharpDrawingContext>? _drawMarginFrame;
     private TooltipFindingStrategy _tooltipFindingStrategy = LiveCharts
         .DefaultSettings
         .TooltipFindingStrategy;
+    private IPaint<SkiaSharpDrawingContext>? _diagonalAxesPaint;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TripartiteChart"/> class.
@@ -75,7 +76,7 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
             OnDeepCollectionPropertyChanged,
             true
         );
-        _velocityObserver = new CollectionDeepObserver<ITripartiteAxis>(
+        _displacementObserver = new CollectionDeepObserver<ITripartiteAxis>(
             OnDeepCollectionChanged,
             OnDeepCollectionPropertyChanged,
             true
@@ -85,6 +86,7 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
             OnDeepCollectionPropertyChanged,
             true
         );
+        //DiagonalAxesPaint = new SolidColorPaint();
 
         XAxes = new List<ITripartiteAxis>()
         {
@@ -105,7 +107,7 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
                 .DefaultSettings.GetProvider<SkiaSharpDrawingContext>()
                 .GetDefaultTripartiteAxis()
         };
-        VelocityAxes = new List<ITripartiteAxis>()
+        DisplacementAxes = new List<ITripartiteAxis>()
         {
             LiveCharts
                 .DefaultSettings.GetProvider<SkiaSharpDrawingContext>()
@@ -121,10 +123,13 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
         c.MouseUp += OnMouseUp;
     }
 
-    TripartiteChart<SkiaSharpDrawingContext> ITripartiteChartView<SkiaSharpDrawingContext>.Core =>
+    TripartiteChart<SkiaSharpDrawingContext, LineGeometry> ITripartiteChartView<
+        SkiaSharpDrawingContext,
+        LineGeometry
+    >.Core =>
         core is null
             ? throw new Exception("core not found")
-            : (TripartiteChart<SkiaSharpDrawingContext>)core;
+            : (TripartiteChart<SkiaSharpDrawingContext, LineGeometry>)core;
 
     /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.Series" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -182,16 +187,16 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
         }
     }
 
-    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.VelocityAxes" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.DisplacementAxes" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IEnumerable<ITripartiteAxis> VelocityAxes
+    public IEnumerable<ITripartiteAxis> DisplacementAxes
     {
-        get => _velocityAxes;
+        get => _displacementAxes;
         set
         {
-            _velocityObserver?.Dispose(_velocityAxes);
-            _velocityObserver?.Initialize(value);
-            _velocityAxes = value;
+            _displacementObserver?.Dispose(_displacementAxes);
+            _displacementObserver?.Initialize(value);
+            _displacementAxes = value;
             OnPropertyChanged();
         }
     }
@@ -218,6 +223,18 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
         set
         {
             _drawMarginFrame = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.DiagonalAxesPaint" />
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IPaint<SkiaSharpDrawingContext>? DiagonalAxesPaint
+    {
+        get => _diagonalAxesPaint;
+        set
+        {
+            _diagonalAxesPaint = value;
             OnPropertyChanged();
         }
     }
@@ -260,7 +277,7 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
         zoomingSectionPaint.AddGeometryToPaintTask(motionCanvas.CanvasCore, zoomingSection);
         motionCanvas.CanvasCore.AddDrawableTask(zoomingSectionPaint);
 
-        core = new TripartiteChart<SkiaSharpDrawingContext>(
+        core = new TripartiteChart<SkiaSharpDrawingContext, LineGeometry>(
             this,
             config => config.UseDefaults(),
             motionCanvas.CanvasCore,
@@ -268,6 +285,9 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
         );
         if (((IChartView)this).DesignerMode)
             return;
+
+        //DrawDiagonalAxes();
+
         core.Update();
     }
 
@@ -277,24 +297,26 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
     {
         if (core is null)
             throw new Exception("core not found");
-        var cartesianCore = (TripartiteChart<SkiaSharpDrawingContext>)core;
+        var cartesianCore = (TripartiteChart<SkiaSharpDrawingContext, LineGeometry>)core;
         return cartesianCore.ScaleUIPoint(point, xAxisIndex, yAxisIndex);
     }
 
     /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ScalePixelsToData(LvcPointD, int, int)"/>
     public LvcPointD ScalePixelsToData(LvcPointD point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
-        if (core is not TripartiteChart<SkiaSharpDrawingContext> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc)
             throw new Exception("core not found");
         var xScaler = new TripartiteScaler(
             cc.DrawMarginLocation,
             cc.DrawMarginSize,
-            cc.XAxes[xAxisIndex]
+            cc.XAxes[xAxisIndex],
+            cc.XAxes[xAxisIndex].Orientation
         );
         var yScaler = new TripartiteScaler(
             cc.DrawMarginLocation,
             cc.DrawMarginSize,
-            cc.YAxes[yAxisIndex]
+            cc.YAxes[yAxisIndex],
+            cc.XAxes[yAxisIndex].Orientation
         );
 
         return new LvcPointD
@@ -307,18 +329,20 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
     /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ScaleDataToPixels(LvcPointD, int, int)"/>
     public LvcPointD ScaleDataToPixels(LvcPointD point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
-        if (core is not TripartiteChart<SkiaSharpDrawingContext> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc)
             throw new Exception("core not found");
 
         var xScaler = new TripartiteScaler(
             cc.DrawMarginLocation,
             cc.DrawMarginSize,
-            cc.XAxes[xAxisIndex]
+            cc.XAxes[xAxisIndex],
+            cc.XAxes[xAxisIndex].Orientation
         );
         var yScaler = new TripartiteScaler(
             cc.DrawMarginLocation,
             cc.DrawMarginSize,
-            cc.YAxes[yAxisIndex]
+            cc.YAxes[yAxisIndex],
+            cc.XAxes[yAxisIndex].Orientation
         );
 
         return new LvcPointD { X = xScaler.ToPixels(point.X), Y = yScaler.ToPixels(point.Y) };
@@ -330,7 +354,7 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
         TooltipFindingStrategy strategy = TooltipFindingStrategy.Automatic
     )
     {
-        if (core is not TripartiteChart<SkiaSharpDrawingContext> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc)
             throw new Exception("core not found");
 
         if (strategy == TooltipFindingStrategy.Automatic)
@@ -342,7 +366,7 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
     /// <inheritdoc cref="IChartView{TDrawingContext}.GetVisualsAt(LvcPoint)"/>
     public override IEnumerable<VisualElement<SkiaSharpDrawingContext>> GetVisualsAt(LvcPoint point)
     {
-        return core is not TripartiteChart<SkiaSharpDrawingContext> cc
+        return core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc
             ? throw new Exception("core not found")
             : cc.VisualElements.SelectMany(visual =>
                 ((VisualElement<SkiaSharpDrawingContext>)visual).IsHitBy(core, point)
@@ -363,7 +387,7 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
     {
         if (core is null)
             throw new Exception("core not found");
-        var c = (TripartiteChart<SkiaSharpDrawingContext>)core;
+        var c = (TripartiteChart<SkiaSharpDrawingContext, LineGeometry>)core;
         var p = e.Location;
         c.Zoom(new LvcPoint(p.X, p.Y), e.Delta > 0 ? ZoomDirection.ZoomIn : ZoomDirection.ZoomOut);
     }
@@ -386,5 +410,32 @@ public class TripartiteChart : Chart, ITripartiteChartView<SkiaSharpDrawingConte
             new LvcPoint(e.Location.X, e.Location.Y),
             e.Button == MouseButtons.Right
         );
+    }
+
+    private void DrawDiagonalAxes()
+    {
+        var lineGeometry = new LineGeometry
+        {
+            X = 100,
+            Y = 100,
+            Y1 = 200,
+            X1 = 200
+        };
+        var linePaint = new SolidColorPaint { IsFill = true, Color = SKColors.Red, };
+        linePaint.AddGeometryToPaintTask(motionCanvas.CanvasCore, lineGeometry);
+        motionCanvas.CanvasCore.AddDrawableTask(linePaint);
+
+        lineGeometry.CompleteTransition(null);
+
+        lineGeometry = new LineGeometry
+        {
+            X = 300,
+            Y = 300,
+            Y1 = 400,
+            X1 = 400
+        };
+        linePaint.AddGeometryToPaintTask(motionCanvas.CanvasCore, lineGeometry);
+        motionCanvas.CanvasCore.AddDrawableTask(linePaint);
+        lineGeometry.CompleteTransition(null);
     }
 }

@@ -325,7 +325,7 @@ public static class Extensions
             // modify the size of the label to avoid overlapping
             // and improve readability.
 
-            // TODO: acceleration and velocity
+            // TODO: acceleration and displacement
 
             const float xGrowFactor = 1.10f;
             if (axis.Orientation == TripartiteAxisOrientation.X)
@@ -360,7 +360,7 @@ public static class Extensions
                 ? Math.Round(controlSize.Height / h, 0)
                 : axis.Orientation == TripartiteAxisOrientation.X
                     ? Math.Round(controlSize.Width / w, 0)
-                    // TODO: handle acceleration and velocity
+                    // TODO: handle acceleration and displacement
                     : Math.Round(controlSize.Width / w, 0);
 
         var minimum = range / separations;
@@ -759,13 +759,19 @@ public static class Extensions
     /// <param name="axis"></param>
     /// <param name="chart"></param>
     /// <returns></returns>
-    public static TripartiteScaler GetNextScaler<TDrawingContext>(
+    public static TripartiteScaler GetNextScaler<TDrawingContext, TLineGeometry>(
         this ITripartiteAxis axis,
-        TripartiteChart<TDrawingContext> chart
+        TripartiteChart<TDrawingContext, TLineGeometry> chart
     )
         where TDrawingContext : DrawingContext
+        where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
     {
-        return new TripartiteScaler(chart.DrawMarginLocation, chart.DrawMarginSize, axis);
+        return new TripartiteScaler(
+            chart.DrawMarginLocation,
+            chart.DrawMarginSize,
+            axis,
+            axis.Orientation
+        );
     }
 
     /// <summary>
@@ -804,11 +810,12 @@ public static class Extensions
     /// <param name="axis"></param>
     /// <param name="chart"></param>
     /// <returns></returns>
-    public static TripartiteScaler? GetActualScaler<TDrawingContext>(
+    public static TripartiteScaler? GetActualScaler<TDrawingContext, TLineGeometry>(
         this ITripartiteAxis axis,
-        TripartiteChart<TDrawingContext> chart
+        TripartiteChart<TDrawingContext, TLineGeometry> chart
     )
         where TDrawingContext : DrawingContext
+        where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
     {
         return !axis.ActualBounds.HasPreviousState
             ? null
@@ -816,6 +823,7 @@ public static class Extensions
                 chart.ActualBounds.Location,
                 chart.ActualBounds.Size,
                 axis,
+                axis.Orientation,
                 new Bounds
                 {
                     Max = axis.ActualBounds.MaxVisibleBound,

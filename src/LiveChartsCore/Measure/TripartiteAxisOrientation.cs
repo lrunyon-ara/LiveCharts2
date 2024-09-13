@@ -43,9 +43,9 @@ public enum TripartiteAxisOrientation
     Y,
 
     /// <summary>
-    /// The Velocity orientation.
+    /// The displacement orientation.
     /// </summary>
-    Velocity,
+    Displacement,
 
     /// <summary>
     /// The Acceleration orientation.
