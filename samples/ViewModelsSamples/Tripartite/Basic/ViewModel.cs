@@ -64,8 +64,8 @@ public partial class ViewModel : ObservableObject
             },
             LabelsPaint = new SolidColorPaint()
             {
-                Color = SKColors.LightGray,
-                ZIndex = -1,
+                Color = SKColors.Black,
+                ZIndex = 2,
                 StrokeThickness = 1,
             }
         };

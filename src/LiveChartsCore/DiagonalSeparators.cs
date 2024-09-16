@@ -20,7 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
 using System.ComponentModel;
+using System.Runtime.Serialization;
 using LiveChartsCore.Drawing;
 using LiveChartsCore.Kernel;
 
@@ -127,76 +129,77 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         //var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
         //var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
 
-        if (LabelsPaint is not null)
-        {
-            _textGeometry = new TTextGeometry
-            {
-                Text = "Test",
-                X = drawMarginLocation.X + drawMarginSize.Width / 2,
-                Y = drawMarginLocation.Y + drawMarginSize.Height / 2,
-                // TODO: remove
-                //Text = Name ?? string.Empty,
-                //TextSize = (float)_nameTextSize,
-                //RotateTransform = Orientation == AxisOrientation.X
-                //? 0
-                //: InLineNamePlacement ? 0 : -90,
-                //Padding = NamePadding
-            };
-            LabelsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _textGeometry);
-            tripartiteChart.Canvas.AddDrawableTask(LabelsPaint);
-            _textGeometry.CompleteTransition(null);
-        }
+        var labelAngle = (float)(
+            Math.Atan2(
+                drawMarginSize.Height - drawMarginLocation.Y,
+                drawMarginSize.Width - drawMarginLocation.X
+            ) * (180.0 / Math.PI)
+        );
 
+        float x,
+            y,
+            x1,
+            y1;
         for (double i = 0; i <= 1; i += 0.1)
         {
             // acceleration go bottom left to top right
             // a = -2*pi*f*v
 
             // acceleration center to top right
+            x = (float)(drawMarginSize.Width * i) + drawMarginLocation.X;
+            y = drawMarginLocation.Y;
+            x1 = drawMarginSize.Width + drawMarginLocation.X;
+            y1 = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
+
             _lineGeometry = new TLineGeometry
             {
-                X = (float)(drawMarginSize.Width * i) + drawMarginLocation.X,
-                Y = drawMarginLocation.Y,
-                X1 = drawMarginSize.Width + drawMarginLocation.X,
-                Y1 =
-                    -(float)(drawMarginSize.Height * i)
-                    + drawMarginSize.Height
-                    + drawMarginLocation.Y,
+                X = x,
+                Y = y,
+                X1 = x1,
+                Y1 = y1,
             };
+
+            DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
+            tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
+            _lineGeometry.CompleteTransition(null);
+
+            AddLabelTask(chart, x, y, x1, y1, labelAngle, i);
 
             // acceleration center to bottom left
-            DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
-            tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
-            _lineGeometry.CompleteTransition(null);
+            x = (float)(drawMarginSize.Width * i) + drawMarginLocation.X;
+            y = drawMarginLocation.Y + drawMarginSize.Height;
+            x1 = drawMarginLocation.X;
+            y1 = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
 
             _lineGeometry = new TLineGeometry
             {
-                X = (float)(drawMarginSize.Width * i) + drawMarginLocation.X,
-                Y = drawMarginLocation.Y + drawMarginSize.Height,
-                X1 = drawMarginLocation.X,
-                Y1 =
-                    -(float)(drawMarginSize.Height * i)
-                    + drawMarginSize.Height
-                    + drawMarginLocation.Y,
+                X = x,
+                Y = y,
+                X1 = x1,
+                Y1 = y1,
             };
 
             DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
             tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
             _lineGeometry.CompleteTransition(null);
+
+            AddLabelTask(chart, x, y, x1, y1, labelAngle, i);
 
             // displacement go top left to bottom right
             // d = v/(2*pi*f)
 
             // displacement center to top left
+            x = drawMarginLocation.X;
+            y = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
+            x1 = (float)(drawMarginSize.Width * (1 - i)) + drawMarginLocation.X;
+            y1 = drawMarginLocation.Y;
+
             _lineGeometry = new TLineGeometry
             {
-                X = drawMarginLocation.X,
-                Y =
-                    -(float)(drawMarginSize.Height * i)
-                    + drawMarginSize.Height
-                    + drawMarginLocation.Y,
-                X1 = (float)(drawMarginSize.Width * (1 - i)) + drawMarginLocation.X,
-                Y1 = drawMarginLocation.Y,
+                X = x,
+                Y = y,
+                X1 = x1,
+                Y1 = y1,
             };
 
             // displacement center to bottom right
@@ -204,20 +207,26 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
             _lineGeometry.CompleteTransition(null);
 
+            AddLabelTask(chart, x, y, x1, y1, -labelAngle, i);
+
+            x = drawMarginLocation.X + drawMarginSize.Width;
+            y = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
+            x1 = (float)(drawMarginSize.Width * (1 - i)) + drawMarginLocation.X;
+            y1 = drawMarginLocation.Y + drawMarginSize.Height;
+
             _lineGeometry = new TLineGeometry
             {
-                X = drawMarginLocation.X + drawMarginSize.Width,
-                Y =
-                    -(float)(drawMarginSize.Height * i)
-                    + drawMarginSize.Height
-                    + drawMarginLocation.Y,
-                X1 = (float)(drawMarginSize.Width * (1 - i)) + drawMarginLocation.X,
-                Y1 = drawMarginLocation.Y + drawMarginSize.Height,
+                X = x,
+                Y = y,
+                X1 = x1,
+                Y1 = y1,
             };
 
             DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
             tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
             _lineGeometry.CompleteTransition(null);
+
+            AddLabelTask(chart, x, y, x1, y1, -labelAngle, i);
         }
 
         if (!_isInitialized)
@@ -225,6 +234,36 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             _lineGeometry?.Animate(chart);
             _textGeometry?.Animate(chart);
             _isInitialized = true;
+        }
+    }
+
+    private const double LOWERBOUNDS = .1;
+    private const double UPPERBOUNDS = .8;
+
+    private void AddLabelTask(
+        Chart<TDrawingContext> chart,
+        float x,
+        float y,
+        float x1,
+        float y1,
+        float angle,
+        double iteration
+    )
+    {
+        // the numbers keep the labels from clipping
+        if (LabelsPaint is not null && iteration > LOWERBOUNDS && iteration < UPPERBOUNDS)
+        {
+            _textGeometry = new TTextGeometry
+            {
+                Text = "xxxxxx in.",
+                X = (x1 - x) / 2 + x,
+                Y = (y1 - y) / 2 + y,
+                RotateTransform = angle,
+            };
+
+            LabelsPaint.AddGeometryToPaintTask(chart.Canvas, _textGeometry);
+            chart.Canvas.AddDrawableTask(LabelsPaint);
+            _textGeometry.CompleteTransition(null);
         }
     }
 }
