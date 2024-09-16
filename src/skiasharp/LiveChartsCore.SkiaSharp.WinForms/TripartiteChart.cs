@@ -20,7 +20,7 @@ namespace LiveChartsCore.SkiaSharpView.WinForms;
 /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}" />
 public class TripartiteChart
     : CartesianChart,
-        ITripartiteChartView<SkiaSharpDrawingContext, LineGeometry>
+        ITripartiteChartView<SkiaSharpDrawingContext, LineGeometry, LabelGeometry>
 {
     private readonly CollectionDeepObserver<ISeries> _seriesObserver;
     private readonly CollectionDeepObserver<ICartesianAxis> _xObserver;
@@ -35,7 +35,11 @@ public class TripartiteChart
     private TooltipFindingStrategy _tooltipFindingStrategy = LiveCharts
         .DefaultSettings
         .TooltipFindingStrategy;
-    private IPaint<SkiaSharpDrawingContext>? _diagonalAxesPaint;
+    private DiagonalSeparators<
+        SkiaSharpDrawingContext,
+        LineGeometry,
+        LabelGeometry
+    >? _diagonalSeparators;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TripartiteChart"/> class.
@@ -88,7 +92,6 @@ public class TripartiteChart
         };
         Series = new ObservableCollection<ISeries>();
         VisualElements = new ObservableCollection<ChartElement<SkiaSharpDrawingContext>>();
-        DiagonalAxesPaint = new SolidColorPaint();
 
         var c = Controls[0].Controls[0];
 
@@ -97,13 +100,14 @@ public class TripartiteChart
         c.MouseUp += OnMouseUp;
     }
 
-    TripartiteChart<SkiaSharpDrawingContext, LineGeometry> ITripartiteChartView<
+    TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry> ITripartiteChartView<
         SkiaSharpDrawingContext,
-        LineGeometry
+        LineGeometry,
+        LabelGeometry
     >.Core =>
         core is null
             ? throw new Exception("core not found")
-            : (TripartiteChart<SkiaSharpDrawingContext, LineGeometry>)core;
+            : (TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry>)core;
 
     /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.Series" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -173,14 +177,18 @@ public class TripartiteChart
         }
     }
 
-    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.DiagonalAxesPaint" />
+    /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.DiagonalSeparators" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public IPaint<SkiaSharpDrawingContext>? DiagonalAxesPaint
+    public DiagonalSeparators<
+        SkiaSharpDrawingContext,
+        LineGeometry,
+        LabelGeometry
+    >? DiagonalSeparators
     {
-        get => _diagonalAxesPaint;
+        get => _diagonalSeparators;
         set
         {
-            _diagonalAxesPaint = value;
+            _diagonalSeparators = value;
             OnPropertyChanged();
         }
     }
@@ -223,7 +231,7 @@ public class TripartiteChart
         zoomingSectionPaint.AddGeometryToPaintTask(motionCanvas.CanvasCore, zoomingSection);
         motionCanvas.CanvasCore.AddDrawableTask(zoomingSectionPaint);
 
-        core = new TripartiteChart<SkiaSharpDrawingContext, LineGeometry>(
+        core = new TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry>(
             this,
             config => config.UseDefaults(),
             motionCanvas.CanvasCore,
@@ -241,14 +249,15 @@ public class TripartiteChart
     {
         if (core is null)
             throw new Exception("core not found");
-        var cartesianCore = (TripartiteChart<SkiaSharpDrawingContext, LineGeometry>)core;
+        var cartesianCore =
+            (TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry>)core;
         return cartesianCore.ScaleUIPoint(point, xAxisIndex, yAxisIndex);
     }
 
     /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ScalePixelsToData(LvcPointD, int, int)"/>
     public LvcPointD ScalePixelsToData(LvcPointD point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
-        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry> cc)
             throw new Exception("core not found");
         var xScaler = new Scaler(cc.DrawMarginLocation, cc.DrawMarginSize, cc.XAxes[xAxisIndex]);
         var yScaler = new Scaler(cc.DrawMarginLocation, cc.DrawMarginSize, cc.YAxes[yAxisIndex]);
@@ -263,7 +272,7 @@ public class TripartiteChart
     /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ScaleDataToPixels(LvcPointD, int, int)"/>
     public LvcPointD ScaleDataToPixels(LvcPointD point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
-        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry> cc)
             throw new Exception("core not found");
 
         var xScaler = new Scaler(cc.DrawMarginLocation, cc.DrawMarginSize, cc.XAxes[xAxisIndex]);
@@ -278,7 +287,7 @@ public class TripartiteChart
         TooltipFindingStrategy strategy = TooltipFindingStrategy.Automatic
     )
     {
-        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc)
+        if (core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry> cc)
             throw new Exception("core not found");
 
         if (strategy == TooltipFindingStrategy.Automatic)
@@ -290,7 +299,7 @@ public class TripartiteChart
     /// <inheritdoc cref="IChartView{TDrawingContext}.GetVisualsAt(LvcPoint)"/>
     public override IEnumerable<VisualElement<SkiaSharpDrawingContext>> GetVisualsAt(LvcPoint point)
     {
-        return core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry> cc
+        return core is not TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry> cc
             ? throw new Exception("core not found")
             : cc.VisualElements.SelectMany(visual =>
                 ((VisualElement<SkiaSharpDrawingContext>)visual).IsHitBy(core, point)
@@ -311,7 +320,7 @@ public class TripartiteChart
     {
         if (core is null)
             throw new Exception("core not found");
-        var c = (TripartiteChart<SkiaSharpDrawingContext, LineGeometry>)core;
+        var c = (TripartiteChart<SkiaSharpDrawingContext, LineGeometry, LabelGeometry>)core;
         var p = e.Location;
         c.Zoom(new LvcPoint(p.X, p.Y), e.Delta > 0 ? ZoomDirection.ZoomIn : ZoomDirection.ZoomOut);
     }

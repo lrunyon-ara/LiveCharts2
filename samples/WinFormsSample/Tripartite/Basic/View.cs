@@ -20,7 +20,7 @@ public partial class View : UserControl
             Series = viewModel.Series,
             XAxes = viewModel.XAxes,
             YAxes = viewModel.YAxes,
-            DiagonalAxesPaint = viewModel.DiagonalAxesPaint,
+            DiagonalSeparators = viewModel.DiagonalSeparators,
             Title = viewModel.Title,
             DrawMarginFrame = viewModel.DrawMarginFrame,
             Location = new System.Drawing.Point(0, 0),

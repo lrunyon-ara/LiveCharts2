@@ -53,12 +53,22 @@ public partial class ViewModel : ObservableObject
     public DrawMarginFrame DrawMarginFrame { get; set; } =
         new DrawMarginFrame { Stroke = new SolidColorPaint(SKColors.Black, 3), };
 
-    public SolidColorPaint DiagonalAxesPaint = new SolidColorPaint()
-    {
-        Color = SKColors.LightGray,
-        ZIndex = -1,
-        StrokeThickness = 1,
-    };
+    public DiagonalSeparators DiagonalSeparators { get; set; } =
+        new DiagonalSeparators
+        {
+            DiagonalSeparatorsPaint = new SolidColorPaint()
+            {
+                Color = SKColors.LightGray,
+                ZIndex = -1,
+                StrokeThickness = 1,
+            },
+            LabelsPaint = new SolidColorPaint()
+            {
+                Color = SKColors.LightGray,
+                ZIndex = -1,
+                StrokeThickness = 1,
+            }
+        };
 
     public Axis[] XAxes { get; set; } =
         {

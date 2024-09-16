@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 using LiveChartsCore.Drawing;
 using LiveChartsCore.Kernel;
 using LiveChartsCore.Kernel.Sketches;
@@ -17,12 +18,14 @@ namespace LiveChartsCore;
 /// <typeparam name="TDrawingContext">The type of the drawing context.</typeparam>
 /// <seealso cref="Chart{TDrawingContext}" />
 /// <typeparam name="TLineGeometry">The type of the line geometry.</typeparam>
-public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TDrawingContext>
+public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
+    : CartesianChart<TDrawingContext>
     where TDrawingContext : DrawingContext
     where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
+    where TTextGeometry : ILabelGeometry<TDrawingContext>, new()
 {
     internal readonly ISizedGeometry<TDrawingContext> _zoomingSection;
-    private readonly ITripartiteChartView<TDrawingContext, TLineGeometry> _chartView;
+    private readonly ITripartiteChartView<TDrawingContext, TLineGeometry, TTextGeometry> _chartView;
     private int _nextSeries = 0;
     private double _zoomingSpeed = 0;
     private ZoomAndPanMode _zoomMode;
@@ -39,7 +42,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
     /// <param name="canvas">The canvas.</param>
     /// <param name="zoomingSection">The zooming section.</param>
     public TripartiteChart(
-        ITripartiteChartView<TDrawingContext, TLineGeometry> view,
+        ITripartiteChartView<TDrawingContext, TLineGeometry, TTextGeometry> view,
         Action<LiveChartsSettings> defaultPlatformConfig,
         MotionCanvas<TDrawingContext> canvas,
         ISizedGeometry<TDrawingContext>? zoomingSection
@@ -66,14 +69,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
     public bool IsZoomingOrPanning { get; private set; }
 
     /// <summary>
-    /// Gets the diagonal axes paint
-    /// </summary>
-    /// <value>
-    /// The diagonal axes paint.
-    /// </value>
-    public IPaint<TDrawingContext>? DiagonalAxesPaint { get; private set; }
-
-    /// <summary>
     /// Gets the view.
     /// </summary>
     /// <value>
@@ -87,100 +82,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
     public override void AddVisual(ChartElement<TDrawingContext> element)
     {
         base.AddVisual(element);
-    }
-
-    //TODO: we will need to remove them if these are redrawn
-    // could be as simple as storing a list and removing somehow?
-    // TODO also need to add a way to determine scaling (which units are used for each)
-    private void DrawDiagonalLines()
-    {
-        if (XAxes != null && YAxes != null && DiagonalAxesPaint != null)
-        {
-            var xAxis = XAxes[0];
-            var yAxis = YAxes[0];
-
-            // if neither axis is visible then we don't draw our diagonal lines
-            if (!xAxis.IsVisible || !yAxis.IsVisible)
-                return;
-
-            // we may yet need this
-            //var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
-            //var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
-
-            TLineGeometry lineGeometry;
-            for (double i = 0; i <= 1; i += 0.1)
-            {
-                // acceleration go bottom left to top right
-                // a = -2*pi*f*v
-
-                // acceleration center to top right
-                lineGeometry = new TLineGeometry
-                {
-                    X = (float)(DrawMarginSize.Width * i) + DrawMarginLocation.X,
-                    Y = DrawMarginLocation.Y,
-                    X1 = DrawMarginSize.Width + DrawMarginLocation.X,
-                    Y1 =
-                        -(float)(DrawMarginSize.Height * i)
-                        + DrawMarginSize.Height
-                        + DrawMarginLocation.Y,
-                };
-
-                // acceleration center to bottom left
-                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                Canvas.AddDrawableTask(DiagonalAxesPaint);
-                lineGeometry.CompleteTransition(null);
-
-                lineGeometry = new TLineGeometry
-                {
-                    X = (float)(DrawMarginSize.Width * i) + DrawMarginLocation.X,
-                    Y = DrawMarginLocation.Y + DrawMarginSize.Height,
-                    X1 = DrawMarginLocation.X,
-                    Y1 =
-                        -(float)(DrawMarginSize.Height * i)
-                        + DrawMarginSize.Height
-                        + DrawMarginLocation.Y,
-                };
-
-                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                Canvas.AddDrawableTask(DiagonalAxesPaint);
-                lineGeometry.CompleteTransition(null);
-
-                // displacement go top left to bottom right
-                // d = v/(2*pi*f)
-
-                // displacement center to top left
-                lineGeometry = new TLineGeometry
-                {
-                    X = DrawMarginLocation.X,
-                    Y =
-                        -(float)(DrawMarginSize.Height * i)
-                        + DrawMarginSize.Height
-                        + DrawMarginLocation.Y,
-                    X1 = (float)(DrawMarginSize.Width * (1 - i)) + DrawMarginLocation.X,
-                    Y1 = DrawMarginLocation.Y,
-                };
-
-                // displacement center to bottom right
-                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                Canvas.AddDrawableTask(DiagonalAxesPaint);
-                lineGeometry.CompleteTransition(null);
-
-                lineGeometry = new TLineGeometry
-                {
-                    X = DrawMarginLocation.X + DrawMarginSize.Width,
-                    Y =
-                        -(float)(DrawMarginSize.Height * i)
-                        + DrawMarginSize.Height
-                        + DrawMarginLocation.Y,
-                    X1 = (float)(DrawMarginSize.Width * (1 - i)) + DrawMarginLocation.X,
-                    Y1 = DrawMarginLocation.Y + DrawMarginSize.Height,
-                };
-
-                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                Canvas.AddDrawableTask(DiagonalAxesPaint);
-                lineGeometry.CompleteTransition(null);
-            }
-        }
     }
 
     /// <summary>
@@ -484,8 +385,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
 
         YAxes = _chartView.YAxes.Cast<ICartesianAxis<TDrawingContext>>().ToArray();
         XAxes = _chartView.XAxes.Cast<ICartesianAxis<TDrawingContext>>().ToArray();
-
-        DiagonalAxesPaint = _chartView.DiagonalAxesPaint;
 
         _zoomingSpeed = _chartView.ZoomingSpeed;
         _zoomMode = _chartView.ZoomMode;
@@ -993,6 +892,13 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
             ce._isInternalSet = false;
         }
 
+        if (_chartView.DiagonalSeparators is not null)
+        {
+            var ce = (ChartElement<TDrawingContext>)_chartView.DiagonalSeparators;
+
+            AddVisual(_chartView.DiagonalSeparators);
+        }
+
         ActualBounds.HasPreviousState = true;
 
         IsZoomingOrPanning = false;
@@ -1004,8 +910,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
 
         Canvas.Invalidate();
         _isFirstDraw = false;
-
-        DrawDiagonalLines();
     }
 
     /// <inheritdoc cref="Chart{TDrawingContext}.Unload"/>
@@ -1020,7 +924,8 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
 
     internal override void InvokePointerDown(LvcPoint point, bool isSecondaryAction)
     {
-        var tripartiteView = (ITripartiteChartView<TDrawingContext, TLineGeometry>)View;
+        var tripartiteView =
+            (ITripartiteChartView<TDrawingContext, TLineGeometry, TTextGeometry>)View;
         if ((tripartiteView.ZoomMode & ZoomAndPanMode.InvertPanningPointerTrigger) != 0)
             isSecondaryAction = !isSecondaryAction;
 
