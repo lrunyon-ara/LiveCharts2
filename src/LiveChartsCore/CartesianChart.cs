@@ -32,25 +32,6 @@ using LiveChartsCore.Motion;
 
 namespace LiveChartsCore;
 
-// TODO: find in this class where the actual drawing of axes takes place
-// we are looking for some type of .Draw(IDrawingContext) or similar call
-// Could also be in the Chart<IDrawingContext> class which CartesianChart inherits from
-
-// update: search the project for .Draw( until you find where stuff is drawn maybe?
-
-// update: searching for .Draw( didn't really work. I think we need to find where the axes' geometries are declared
-// specficially their drawing methods
-
-// update: search for .AddDrawableTask(
-
-// update: we know core axis contain the import .Invalidate( function,
-// we need to find what inherits it and also try to see where invalidate is called
-
-// update: seems as though I will have to make a new CoreAxis version for our Tripartite chart since we need a different AxisOrientation
-
-// update: look for the drawing that is related to seperators, probably .UpdateSeparator(
-// find out what each var in UpdateSeparator means
-
 /// <summary>
 /// Defines a Cartesian chart.
 /// </summary>
@@ -99,7 +80,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <value>
     /// The x axes.
     /// </value>
-    public ICartesianAxis<TDrawingContext>[] XAxes { get; private set; } =
+    public ICartesianAxis<TDrawingContext>[] XAxes { get; set; } =
         Array.Empty<ICartesianAxis<TDrawingContext>>();
 
     /// <summary>
@@ -108,7 +89,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <value>
     /// The y axes.
     /// </value>
-    public ICartesianAxis<TDrawingContext>[] YAxes { get; private set; } =
+    public ICartesianAxis<TDrawingContext>[] YAxes { get; set; } =
         Array.Empty<ICartesianAxis<TDrawingContext>>();
 
     /// <summary>
@@ -117,7 +98,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <value>
     /// The sections.
     /// </value>
-    public IEnumerable<Section<TDrawingContext>> Sections { get; private set; } =
+    public IEnumerable<Section<TDrawingContext>> Sections { get; set; } =
         Array.Empty<Section<TDrawingContext>>();
 
     ///<inheritdoc cref="Chart{TDrawingContext}.Series"/>
@@ -134,7 +115,7 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
     /// <value>
     ///   <c>true</c> if this instance is zooming or panning; otherwise, <c>false</c>.
     /// </value>
-    public bool IsZoomingOrPanning { get; private set; }
+    public bool IsZoomingOrPanning { get; set; }
 
     /// <summary>
     /// Gets the view.

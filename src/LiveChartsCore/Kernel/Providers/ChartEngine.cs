@@ -56,12 +56,6 @@ public abstract class ChartEngine<TDrawingContext>
     public abstract ICartesianAxis GetDefaultCartesianAxis();
 
     /// <summary>
-    /// Gets a new instance of the default Traipartite axis.
-    /// </summary>
-    /// <returns></returns>
-    public abstract ITripartiteAxis GetDefaultTripartiteAxis();
-
-    /// <summary>
     /// Gets a new instance of the default polar axis.
     /// </summary>
     /// <returns></returns>

@@ -169,6 +169,14 @@ public interface ICartesianAxis<TDrawingContext> : ICartesianAxis
     IPaint<TDrawingContext>? SubseparatorsPaint { get; set; }
 
     /// <summary>
+    /// Gets or sets the sub-separators paint.
+    /// </summary>
+    /// <value>
+    /// The separators paint.
+    /// </value>
+    IPaint<TDrawingContext>? SeparatorsPaint { get; set; }
+
+    /// <summary>
     /// Gets or sets the number of subseparators to draw.
     /// </summary>
     int SubseparatorsCount { get; set; }

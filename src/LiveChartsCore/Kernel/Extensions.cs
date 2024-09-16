@@ -296,94 +296,6 @@ public static class Extensions
     /// Gets the tick.
     /// </summary>
     /// <param name="axis">The axis.</param>
-    /// <param name="controlSize">Size of the control.</param>
-    /// <param name="bounds">The bounds.</param>
-    /// <returns></returns>
-    public static AxisTick GetTick(
-        this ITripartiteAxis axis,
-        LvcSize controlSize,
-        Bounds? bounds = null
-    )
-    {
-        bounds ??= axis.VisibleDataBounds;
-        var maxLabelSize = axis.PossibleMaxLabelSize;
-
-        var w = maxLabelSize.Width;
-        var h = maxLabelSize.Height;
-
-        var r = Math.Abs(axis.LabelsRotation % 90);
-
-        if (r is >= 20 and <= 70)
-        {
-            // if the labels are rotated, we assume that they can overlap.
-            var d = 0.35f * (float)Math.Sqrt(w * w + h * h);
-            w = d;
-            h = d;
-        }
-        else
-        {
-            // modify the size of the label to avoid overlapping
-            // and improve readability.
-
-            // TODO: acceleration and displacement
-
-            const float xGrowFactor = 1.10f;
-            if (axis.Orientation == TripartiteAxisOrientation.X)
-                w *= xGrowFactor;
-
-            const float yGrowFactor = 1.5f;
-            if (axis.Orientation == TripartiteAxisOrientation.Y)
-                h *= yGrowFactor;
-        }
-
-        if (w < MinLabelSize)
-            w = MinLabelSize;
-        if (h < MinLabelSize)
-            h = MinLabelSize;
-
-        var max = axis.MaxLimit is null ? bounds.Max : axis.MaxLimit.Value;
-        var min = axis.MinLimit is null ? bounds.Min : axis.MinLimit.Value;
-
-        AxisLimit.ValidateLimits(ref min, ref max);
-
-        var unit = axis.UnitWidth;
-
-        max /= unit;
-        min /= unit;
-
-        var range = max - min;
-        if (range == 0)
-            range = min;
-
-        var separations =
-            axis.Orientation == TripartiteAxisOrientation.Y
-                ? Math.Round(controlSize.Height / h, 0)
-                : axis.Orientation == TripartiteAxisOrientation.X
-                    ? Math.Round(controlSize.Width / w, 0)
-                    // TODO: handle acceleration and displacement
-                    : Math.Round(controlSize.Width / w, 0);
-
-        var minimum = range / separations;
-
-        var magnitude = Math.Pow(10, Math.Floor(Math.Log(minimum) / Math.Log(10)));
-
-        var residual = minimum / magnitude;
-        var tick =
-            residual > 5
-                ? 10 * magnitude
-                : residual > 2
-                    ? 5 * magnitude
-                    : residual > 1
-                        ? 2 * magnitude
-                        : magnitude;
-
-        return new AxisTick { Value = tick * unit, Magnitude = magnitude * unit };
-    }
-
-    /// <summary>
-    /// Gets the tick.
-    /// </summary>
-    /// <param name="axis">The axis.</param>
     /// <param name="chart">The chart.</param>
     /// <param name="bounds">The bounds.</param>
     /// <returns></returns>
@@ -753,28 +665,6 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Gets a scaler for the given axis with the measured bounds (the target, the final dimension of the chart).
-    /// </summary>
-    /// <typeparam name="TDrawingContext"></typeparam>
-    /// <param name="axis"></param>
-    /// <param name="chart"></param>
-    /// <returns></returns>
-    public static TripartiteScaler GetNextScaler<TDrawingContext, TLineGeometry>(
-        this ITripartiteAxis axis,
-        TripartiteChart<TDrawingContext, TLineGeometry> chart
-    )
-        where TDrawingContext : DrawingContext
-        where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
-    {
-        return new TripartiteScaler(
-            chart.DrawMarginLocation,
-            chart.DrawMarginSize,
-            axis,
-            axis.Orientation
-        );
-    }
-
-    /// <summary>
     /// Gets a scaler that is built based on the dimensions of the chart at a given time, the scaler is built based on the
     /// animations that are happening in the chart at the moment this method is called.
     /// </summary>
@@ -794,36 +684,6 @@ public static class Extensions
                 chart.ActualBounds.Location,
                 chart.ActualBounds.Size,
                 axis,
-                new Bounds
-                {
-                    Max = axis.ActualBounds.MaxVisibleBound,
-                    Min = axis.ActualBounds.MinVisibleBound
-                }
-            );
-    }
-
-    /// <summary>
-    /// Gets a scaler that is built based on the dimensions of the chart at a given time, the scaler is built based on the
-    /// animations that are happening in the chart at the moment this method is called.
-    /// </summary>
-    /// <typeparam name="TDrawingContext"></typeparam>
-    /// <param name="axis"></param>
-    /// <param name="chart"></param>
-    /// <returns></returns>
-    public static TripartiteScaler? GetActualScaler<TDrawingContext, TLineGeometry>(
-        this ITripartiteAxis axis,
-        TripartiteChart<TDrawingContext, TLineGeometry> chart
-    )
-        where TDrawingContext : DrawingContext
-        where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
-    {
-        return !axis.ActualBounds.HasPreviousState
-            ? null
-            : new TripartiteScaler(
-                chart.ActualBounds.Location,
-                chart.ActualBounds.Size,
-                axis,
-                axis.Orientation,
                 new Bounds
                 {
                     Max = axis.ActualBounds.MaxVisibleBound,

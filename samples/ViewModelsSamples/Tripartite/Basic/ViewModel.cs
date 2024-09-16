@@ -20,18 +20,6 @@ public partial class ViewModel : ObservableObject
     public DrawMarginFrame DrawMarginFrame { get; set; } =
         new DrawMarginFrame { Stroke = new SolidColorPaint(SKColors.Black, 3), };
 
-    public TripartiteAxis[] DisplacementAxes { get; set; } =
-        {
-            new TripartiteAxis
-            {
-                SeparatorsPaint = new SolidColorPaint(SKColors.Red)
-                {
-                    ZIndex = 3,
-                    StrokeThickness = 5,
-                },
-            },
-        };
-
     public SolidColorPaint DiagonalAxesPaint = new SolidColorPaint()
     {
         Color = SKColors.LightGray,
@@ -39,67 +27,27 @@ public partial class ViewModel : ObservableObject
         StrokeThickness = 1,
     };
 
-    public TripartiteAxis[] AccelerationAxes { get; set; } =
+    public Axis[] XAxes { get; set; } =
         {
-            new TripartiteAxis
-            {
-                SeparatorsPaint = new SolidColorPaint(SKColors.Green)
-                {
-                    ZIndex = 3,
-                    StrokeThickness = 2,
-                },
-                //TicksPaint = new SolidColorPaint
-                //{
-                //    Color = SKColors.Red,
-                //    StrokeThickness = 3,
-                //    ZIndex = 4
-                //},
-                //SubticksPaint = new SolidColorPaint
-                //{
-                //    Color = SKColors.Purple,
-                //    StrokeThickness = 3,
-                //    ZIndex = 4
-                //},
-                // TODO:
-                // I only see this on the last axes seperator line
-                //ZeroPaint = new SolidColorPaint
-                //{
-                //    Color = SKColors.DarkCyan,
-                //    StrokeThickness = 3,
-                //    ZIndex = 4
-                //}
-            },
-        };
-
-    public TripartiteAxis[] XAxes { get; set; } =
-        {
-            new TripartiteAxis
+            new Axis
             {
                 SeparatorsPaint = new SolidColorPaint(SKColors.Blue)
                 {
                     ZIndex = 3,
                     StrokeThickness = 2,
                 },
-                //TicksPaint = new SolidColorPaint
-                //{
-                //    Color = SKColors.Red,
-                //    StrokeThickness = 3,
-                //    ZIndex = 4
-                //},
-                //SubticksPaint = new SolidColorPaint
-                //{
-                //    Color = SKColors.Purple,
-                //    StrokeThickness = 3,
-                //    ZIndex = 4
-                //},
-                // TODO:
-                // I only see this on the last axes seperator line
-                //ZeroPaint = new SolidColorPaint
-                //{
-                //    Color = SKColors.DarkCyan,
-                //    StrokeThickness = 3,
-                //    ZIndex = 4
-                //}
+            },
+        };
+
+    public Axis[] YAxes { get; set; } =
+        {
+            new Axis
+            {
+                SeparatorsPaint = new SolidColorPaint(SKColors.Blue)
+                {
+                    ZIndex = 3,
+                    StrokeThickness = 2,
+                },
             },
         };
 

@@ -17,7 +17,7 @@ namespace LiveChartsCore;
 /// <typeparam name="TDrawingContext">The type of the drawing context.</typeparam>
 /// <seealso cref="Chart{TDrawingContext}" />
 /// <typeparam name="TLineGeometry">The type of the line geometry.</typeparam>
-public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingContext>
+public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TDrawingContext>
     where TDrawingContext : DrawingContext
     where TLineGeometry : class, ILineGeometry<TDrawingContext>, new()
 {
@@ -29,7 +29,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
     private DrawMarginFrame<TDrawingContext>? _previousDrawMarginFrame;
     private const double MaxAxisBound = 0.05;
     private const double MaxAxisActiveBound = 0.15;
-    private HashSet<ITripartiteAxis<TDrawingContext>> _crosshair = new();
+    private HashSet<ICartesianAxis<TDrawingContext>> _crosshair = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TripartiteChart{TDrawingContext}"/> class.
@@ -44,62 +44,10 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
         MotionCanvas<TDrawingContext> canvas,
         ISizedGeometry<TDrawingContext>? zoomingSection
     )
-        : base(canvas, defaultPlatformConfig, view)
+        : base(view, defaultPlatformConfig, canvas, zoomingSection)
     {
         _chartView = view;
-        _zoomingSection =
-            zoomingSection ?? throw new Exception($"{nameof(zoomingSection)} is required.");
-        _zoomingSection.X = -1;
-        _zoomingSection.Y = -1;
-        _zoomingSection.Width = 0;
-        _zoomingSection.Height = 0;
     }
-
-    /// <summary>
-    /// Gets the x axes.
-    /// </summary>
-    /// <value>
-    /// The x axes.
-    /// </value>
-    public ITripartiteAxis<TDrawingContext>[] XAxes { get; private set; } =
-        Array.Empty<ITripartiteAxis<TDrawingContext>>();
-
-    /// <summary>
-    /// Gets the y axes.
-    /// </summary>
-    /// <value>
-    /// The y axes.
-    /// </value>
-    public ITripartiteAxis<TDrawingContext>[] YAxes { get; private set; } =
-        Array.Empty<ITripartiteAxis<TDrawingContext>>();
-
-    /// <summary>
-    /// Gets the y axes.
-    /// </summary>
-    /// <value>
-    /// The y axes.
-    /// </value>
-    public ITripartiteAxis<TDrawingContext>[] AccelerationAxes { get; private set; } =
-        Array.Empty<ITripartiteAxis<TDrawingContext>>();
-
-    /// <summary>
-    /// Gets the y axes.
-    /// </summary>
-    /// <value>
-    /// The y axes.
-    /// </value>
-    public ITripartiteAxis<TDrawingContext>[] DisplacementAxes { get; private set; } =
-        Array.Empty<ITripartiteAxis<TDrawingContext>>();
-
-    /// <summary>
-    /// Gets the sections.
-    /// </summary>
-    /// <value>
-    /// The sections.
-    /// </value>
-    /// // TODO: make tripartite
-    public IEnumerable<Section<TDrawingContext>> Sections { get; private set; } =
-        Array.Empty<Section<TDrawingContext>>();
 
     ///<inheritdoc cref="Chart{TDrawingContext}.Series"/>
     public override IEnumerable<IChartSeries<TDrawingContext>> Series =>
@@ -140,41 +88,33 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
     {
         base.AddVisual(element);
 
-        // TODO: we want to add the new dialogonal lines here
-        // this occurs right after our axis invalidates
+        DrawDiagonalLines();
+    }
 
-        // can use .ScaleUIPoint() to scale values
-
+    private void DrawDiagonalLines()
+    {
         if (XAxes != null && YAxes != null && DiagonalAxesPaint != null)
         {
             var xAxis = XAxes[0];
             var yAxis = YAxes[0];
 
-            var xTripartiteScaler = new TripartiteScaler(
-                DrawMarginLocation,
-                DrawMarginSize,
-                xAxis,
-                xAxis.Orientation
-            );
-            var yTripartiteScaler = new TripartiteScaler(
-                DrawMarginLocation,
-                DrawMarginSize,
-                yAxis,
-                yAxis.Orientation
-            );
+            var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
+            var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
 
             var xPoints = xAxis
                 .SeparatorsPaint?.GetGeometries(Canvas)
                 .Cast<TLineGeometry>()
                 .ToList();
+
             var yPoints = yAxis
                 .SeparatorsPaint?.GetGeometries(Canvas)
                 .Cast<TLineGeometry>()
                 .ToList();
 
-            var length = yPoints.Count > xPoints.Count ? xPoints.Count : yPoints.Count;
-
             if (xPoints != null && yPoints != null)
+            {
+                var length = yPoints.Count > xPoints.Count ? xPoints.Count : yPoints.Count;
+
                 for (var i = 0; i < length - 1; i++)
                 {
                     var lineGeometry = new TLineGeometry
@@ -225,6 +165,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
                     Canvas.AddDrawableTask(DiagonalAxesPaint);
                     lineGeometry.CompleteTransition(null);
                 }
+            }
         }
     }
 
@@ -258,24 +199,10 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
         var xAxis = XAxes[xAxisIndex];
         var yAxis = YAxes[yAxisIndex];
 
-        var xTripartiteScaler = new TripartiteScaler(
-            DrawMarginLocation,
-            DrawMarginSize,
-            xAxis,
-            xAxis.Orientation
-        );
-        var yTripartiteScaler = new TripartiteScaler(
-            DrawMarginLocation,
-            DrawMarginSize,
-            yAxis,
-            yAxis.Orientation
-        );
+        var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
+        var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
 
-        return new double[]
-        {
-            xTripartiteScaler.ToChartValues(point.X),
-            yTripartiteScaler.ToChartValues(point.Y)
-        };
+        return new double[] { xScaler.ToChartValues(point.X), yScaler.ToChartValues(point.Y) };
     }
 
     /// <summary>
@@ -313,12 +240,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             for (var index = 0; index < XAxes.Length; index++)
             {
                 var xi = XAxes[index];
-                var px = new TripartiteScaler(
-                    DrawMarginLocation,
-                    DrawMarginSize,
-                    xi,
-                    xi.Orientation
-                ).ToChartValues(pivot.X);
+                var px = new Scaler(DrawMarginLocation, DrawMarginSize, xi).ToChartValues(pivot.X);
 
                 var limits = xi.GetLimits();
 
@@ -378,12 +300,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             for (var index = 0; index < YAxes.Length; index++)
             {
                 var yi = YAxes[index];
-                var px = new TripartiteScaler(
-                    DrawMarginLocation,
-                    DrawMarginSize,
-                    yi,
-                    yi.Orientation
-                ).ToChartValues(pivot.Y);
+                var px = new Scaler(DrawMarginLocation, DrawMarginSize, yi).ToChartValues(pivot.Y);
 
                 var limits = yi.GetLimits();
 
@@ -453,12 +370,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             for (var index = 0; index < XAxes.Length; index++)
             {
                 var xi = XAxes[index];
-                var scale = new TripartiteScaler(
-                    DrawMarginLocation,
-                    DrawMarginSize,
-                    xi,
-                    xi.Orientation
-                );
+                var scale = new Scaler(DrawMarginLocation, DrawMarginSize, xi);
                 var dx = scale.ToChartValues(-delta.X) - scale.ToChartValues(0);
 
                 var limits = xi.GetLimits();
@@ -490,12 +402,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             for (var index = 0; index < YAxes.Length; index++)
             {
                 var yi = YAxes[index];
-                var scale = new TripartiteScaler(
-                    DrawMarginLocation,
-                    DrawMarginSize,
-                    yi,
-                    yi.Orientation
-                );
+                var scale = new Scaler(DrawMarginLocation, DrawMarginSize, yi);
                 var dy = -(scale.ToChartValues(delta.Y) - scale.ToChartValues(0));
 
                 var limits = yi.GetLimits();
@@ -561,14 +468,8 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
         var viewDrawMargin = _chartView.DrawMargin;
         ControlSize = _chartView.ControlSize;
 
-        YAxes = _chartView.YAxes.Cast<ITripartiteAxis<TDrawingContext>>().ToArray();
-        XAxes = _chartView.XAxes.Cast<ITripartiteAxis<TDrawingContext>>().ToArray();
-        AccelerationAxes = _chartView
-            .AccelerationAxes.Cast<ITripartiteAxis<TDrawingContext>>()
-            .ToArray();
-        DisplacementAxes = _chartView
-            .DisplacementAxes.Cast<ITripartiteAxis<TDrawingContext>>()
-            .ToArray();
+        YAxes = _chartView.YAxes.Cast<ICartesianAxis<TDrawingContext>>().ToArray();
+        XAxes = _chartView.XAxes.Cast<ICartesianAxis<TDrawingContext>>().ToArray();
 
         DiagonalAxesPaint = _chartView.DiagonalAxesPaint;
 
@@ -602,7 +503,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
         {
             var ce = (ChartElement<TDrawingContext>)axis;
             ce._isInternalSet = true;
-            axis.Initialize(TripartiteAxisOrientation.X);
+            axis.Initialize(AxisOrientation.X);
             if (!ce._isThemeSet || isNewTheme)
             {
                 theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
@@ -617,35 +518,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             var ce = (ChartElement<TDrawingContext>)axis;
             ce._isInternalSet = true;
             // TODO: maybe here?
-            axis.Initialize(TripartiteAxisOrientation.Y);
-            if (!ce._isThemeSet || isNewTheme)
-            {
-                theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
-                ce._isThemeSet = true;
-            }
-            ce._isInternalSet = false;
-            if (axis.CrosshairPaint is not null)
-                _crosshair.Add(axis);
-        }
-        foreach (var axis in AccelerationAxes)
-        {
-            var ce = (ChartElement<TDrawingContext>)axis;
-            ce._isInternalSet = true;
-            axis.Initialize(TripartiteAxisOrientation.Acceleration);
-            if (!ce._isThemeSet || isNewTheme)
-            {
-                theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
-                ce._isThemeSet = true;
-            }
-            ce._isInternalSet = false;
-            if (axis.CrosshairPaint is not null)
-                _crosshair.Add(axis);
-        }
-        foreach (var axis in DisplacementAxes)
-        {
-            var ce = (ChartElement<TDrawingContext>)axis;
-            ce._isInternalSet = true;
-            axis.Initialize(TripartiteAxisOrientation.Displacement);
+            axis.Initialize(AxisOrientation.Y);
             if (!ce._isThemeSet || isNewTheme)
             {
                 theme.ApplyStyleToAxis((IPlane<TDrawingContext>)axis);
@@ -659,9 +532,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
         // get seriesBounds
         SetDrawMargin(ControlSize, new Margin());
 
-        foreach (
-            var series in VisibleSeries.Cast<ITripartiteSeries<TDrawingContext, TLineGeometry>>()
-        )
+        foreach (var series in VisibleSeries.Cast<ICartesianSeries<TDrawingContext>>())
         {
             if (series.SeriesId == -1)
                 series.SeriesId = _nextSeries++;
@@ -1010,7 +881,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             AddVisual(title);
         }
 
-        var totalAxes = XAxes.Concat(YAxes).Concat(DisplacementAxes).Concat(AccelerationAxes);
+        var totalAxes = XAxes.Concat(YAxes);
 
         foreach (var axis in totalAxes)
         {
@@ -1024,12 +895,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             // apply padding
             if (axis.MinLimit is null)
             {
-                var s = new TripartiteScaler(
-                    DrawMarginLocation,
-                    DrawMarginSize,
-                    axis,
-                    axis.Orientation
-                );
+                var s = new Scaler(DrawMarginLocation, DrawMarginSize, axis);
                 // correction by geometry size
                 var p = Math.Abs(
                     s.ToChartValues(axis.DataBounds.RequestedGeometrySize) - s.ToChartValues(0)
@@ -1046,12 +912,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
             // apply padding
             if (axis.MaxLimit is null)
             {
-                var s = new TripartiteScaler(
-                    DrawMarginLocation,
-                    DrawMarginSize,
-                    axis,
-                    axis.Orientation
-                );
+                var s = new Scaler(DrawMarginLocation, DrawMarginSize, axis);
                 // correction by geometry size
                 var p = Math.Abs(
                     s.ToChartValues(axis.DataBounds.RequestedGeometrySize) - s.ToChartValues(0)
@@ -1355,20 +1216,20 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : Chart<TDrawingCon
         base.InvokePointerUp(point, isSecondaryAction);
     }
 
-    private static void AppendLimits(ITripartiteAxis x, ITripartiteAxis y, DimensionalBounds bounds)
+    private static void AppendLimits(ICartesianAxis x, ICartesianAxis y, DimensionalBounds bounds)
     {
         x.DataBounds.AppendValue(bounds.SecondaryBounds);
         x.VisibleDataBounds.AppendValue(bounds.VisibleSecondaryBounds);
         y.DataBounds.AppendValue(bounds.PrimaryBounds);
         y.VisibleDataBounds.AppendValue(bounds.VisiblePrimaryBounds);
 
-        foreach (var sharedX in x.SharedWith ?? Enumerable.Empty<ITripartiteAxis>())
+        foreach (var sharedX in x.SharedWith ?? Enumerable.Empty<ICartesianAxis>())
         {
             sharedX.DataBounds.AppendValue(bounds.SecondaryBounds);
             sharedX.VisibleDataBounds.AppendValue(bounds.VisibleSecondaryBounds);
         }
 
-        foreach (var sharedY in y.SharedWith ?? Enumerable.Empty<ITripartiteAxis>())
+        foreach (var sharedY in y.SharedWith ?? Enumerable.Empty<ICartesianAxis>())
         {
             sharedY.DataBounds.AppendValue(bounds.PrimaryBounds);
             sharedY.VisibleDataBounds.AppendValue(bounds.VisiblePrimaryBounds);

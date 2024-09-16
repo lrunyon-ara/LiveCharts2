@@ -34,7 +34,9 @@ namespace LiveChartsCore.VisualElements;
 /// <summary>
 /// Defines the base visual element class, inheriting from this class makes it easy to implement a visual element.
 /// </summary>
-public abstract class VisualElement<TDrawingContext> : ChartElement<TDrawingContext>, INotifyPropertyChanged
+public abstract class VisualElement<TDrawingContext>
+    : ChartElement<TDrawingContext>,
+        INotifyPropertyChanged
     where TDrawingContext : DrawingContext
 {
     internal double _x;
@@ -59,51 +61,87 @@ public abstract class VisualElement<TDrawingContext> : ChartElement<TDrawingCont
     /// <summary>
     /// Gets or sets the X coordinate [in Pixels or ChartValues, see <see cref="LocationUnit"/>].
     /// </summary>
-    public double X { get => _x; set => SetProperty(ref _x, value); }
+    public double X
+    {
+        get => _x;
+        set => SetProperty(ref _x, value);
+    }
 
     /// <summary>
     /// Gets or sets the Y coordinate [in Pixels or ChartValues, see <see cref="LocationUnit"/>].
     /// </summary>
-    public double Y { get => _y; set => SetProperty(ref _y, value); }
+    public double Y
+    {
+        get => _y;
+        set => SetProperty(ref _y, value);
+    }
 
     /// <summary>
     /// Gets or sets the rotation.
     /// </summary>
-    public double Rotation { get => _rotation; set { _rotation = value; OnPropertyChanged(); } }
+    public double Rotation
+    {
+        get => _rotation;
+        set
+        {
+            _rotation = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <summary>
     /// Gets or sets the translate transform.
     /// </summary>
-    public LvcPoint Translate { get => _translate; set => SetProperty(ref _translate, value); }
+    public LvcPoint Translate
+    {
+        get => _translate;
+        set => SetProperty(ref _translate, value);
+    }
 
     /// <summary>
     /// Gets or sets the unit of the <see cref="X"/> and <see cref="Y"/> properties.
     /// </summary>
-    public MeasureUnit LocationUnit { get => _locationUnit; set => SetProperty(ref _locationUnit, value); }
+    public MeasureUnit LocationUnit
+    {
+        get => _locationUnit;
+        set => SetProperty(ref _locationUnit, value);
+    }
 
     /// <summary>
-    /// Gets or sets the axis index where the series is scaled in the X plane, the index must exist 
+    /// Gets or sets the axis index where the series is scaled in the X plane, the index must exist
     /// in the <see cref="ICartesianChartView{TDrawingContext}.YAxes"/> collection.
     /// </summary>
     /// <value>
     /// The index of the axis.
     /// </value>
-    public int ScalesXAt { get => _scalesXAt; set => SetProperty(ref _scalesXAt, value); }
+    public int ScalesXAt
+    {
+        get => _scalesXAt;
+        set => SetProperty(ref _scalesXAt, value);
+    }
 
     /// <summary>
-    /// Gets or sets the axis index where the series is scaled in the Y plane, the index must exist 
+    /// Gets or sets the axis index where the series is scaled in the Y plane, the index must exist
     /// in the <see cref="ICartesianChartView{TDrawingContext}.YAxes"/> collection.
     /// </summary>
     /// <value>
     /// The index of the axis.
     /// </value>
-    public int ScalesYAt { get => _scalesYAt; set => SetProperty(ref _scalesYAt, value); }
+    public int ScalesYAt
+    {
+        get => _scalesYAt;
+        set => SetProperty(ref _scalesYAt, value);
+    }
 
     /// <summary>
     /// Gets or sets the clipping mode, clipping restricts the visual element for being drawn outside of the chart area (DrawMargin),
     /// default is <see cref="ClipMode.XY"/>, and means that anything outside the chart bounds will be ignored.
     /// </summary>
-    public ClipMode ClippingMode { get => _clippingMode; set => SetProperty(ref _clippingMode, value); }
+    public ClipMode ClippingMode
+    {
+        get => _clippingMode;
+        set => SetProperty(ref _clippingMode, value);
+    }
 
     /// <summary>
     /// Called when the pointer goes down on the visual.
@@ -124,7 +162,8 @@ public abstract class VisualElement<TDrawingContext> : ChartElement<TDrawingCont
 
         foreach (var paintTask in GetPaintTasks())
         {
-            if (paintTask is null) continue;
+            if (paintTask is null)
+                continue;
             chart.Canvas.AddDrawableTask(paintTask);
         }
 
@@ -171,7 +210,9 @@ public abstract class VisualElement<TDrawingContext> : ChartElement<TDrawingCont
         if (LocationUnit == MeasureUnit.ChartValues)
         {
             if (PrimaryScaler is null || SecondaryScaler is null)
-                throw new Exception($"You can not use {MeasureUnit.ChartValues} scale at this element.");
+                throw new Exception(
+                    $"You can not use {MeasureUnit.ChartValues} scale at this element."
+                );
 
             x = SecondaryScaler.ToPixels(X);
             y = PrimaryScaler.ToPixels(Y);
@@ -180,14 +221,21 @@ public abstract class VisualElement<TDrawingContext> : ChartElement<TDrawingCont
         return new(x, y);
     }
 
-    internal virtual IEnumerable<VisualElement<TDrawingContext>> IsHitBy(Chart<TDrawingContext> chart, LvcPoint point)
+    internal virtual IEnumerable<VisualElement<TDrawingContext>> IsHitBy(
+        Chart<TDrawingContext> chart,
+        LvcPoint point
+    )
     {
         var location = GetActualCoordinate();
         var size = Measure(chart);
 
         // it returns an enumerable because there are more complex types where a visual can contain more than one element
-        if (point.X >= location.X && point.X <= location.X + size.Width &&
-            point.Y >= location.Y && point.Y <= location.Y + size.Height)
+        if (
+            point.X >= location.X
+            && point.X <= location.X + size.Width
+            && point.Y >= location.Y
+            && point.Y <= location.Y + size.Height
+        )
         {
             yield return this;
         }

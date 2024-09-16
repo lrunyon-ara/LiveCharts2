@@ -17,14 +17,12 @@ public partial class View : UserControl
 
         tripartiteChart = new TripartiteChart
         {
-            //Series = viewModel.Series,
-            //XAxes = viewModel.XAxes,
-            AccelerationAxes = viewModel.AccelerationAxes,
+            Series = viewModel.Series,
+            XAxes = viewModel.XAxes,
+            YAxes = viewModel.YAxes,
             DiagonalAxesPaint = viewModel.DiagonalAxesPaint,
-            //DisplacementAxes = viewModel.DisplacementAxes,
             Title = viewModel.Title,
             DrawMarginFrame = viewModel.DrawMarginFrame,
-            // out of livecharts properties...
             Location = new System.Drawing.Point(0, 0),
             Size = new System.Drawing.Size(50, 50),
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom
