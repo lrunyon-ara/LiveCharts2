@@ -87,10 +87,11 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
     public override void AddVisual(ChartElement<TDrawingContext> element)
     {
         base.AddVisual(element);
-
-        DrawDiagonalLines();
     }
 
+    //TODO: we will need to remove them if these are redrawn
+    // could be as simple as storing a list and removing somehow?
+    // TODO also need to add a way to determine scaling (which units are used for each)
     private void DrawDiagonalLines()
     {
         if (XAxes != null && YAxes != null && DiagonalAxesPaint != null)
@@ -98,73 +99,86 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
             var xAxis = XAxes[0];
             var yAxis = YAxes[0];
 
-            var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
-            var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
+            // if neither axis is visible then we don't draw our diagonal lines
+            if (!xAxis.IsVisible || !yAxis.IsVisible)
+                return;
 
-            var xPoints = xAxis
-                .SeparatorsPaint?.GetGeometries(Canvas)
-                .Cast<TLineGeometry>()
-                .ToList();
+            // we may yet need this
+            //var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
+            //var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
 
-            var yPoints = yAxis
-                .SeparatorsPaint?.GetGeometries(Canvas)
-                .Cast<TLineGeometry>()
-                .ToList();
-
-            if (xPoints != null && yPoints != null)
+            TLineGeometry lineGeometry;
+            for (double i = 0; i <= 1; i += 0.1)
             {
-                var length = yPoints.Count > xPoints.Count ? xPoints.Count : yPoints.Count;
+                // acceleration go bottom left to top right
+                // a = -2*pi*f*v
 
-                for (var i = 0; i < length - 1; i++)
+                // acceleration center to top right
+                lineGeometry = new TLineGeometry
                 {
-                    var lineGeometry = new TLineGeometry
-                    {
-                        X = xPoints[i].X,
-                        Y = xPoints[i].Y,
-                        X1 = yPoints[i].X1,
-                        Y1 = yPoints[i].Y1
-                    };
+                    X = (float)(DrawMarginSize.Width * i) + DrawMarginLocation.X,
+                    Y = DrawMarginLocation.Y,
+                    X1 = DrawMarginSize.Width + DrawMarginLocation.X,
+                    Y1 =
+                        -(float)(DrawMarginSize.Height * i)
+                        + DrawMarginSize.Height
+                        + DrawMarginLocation.Y,
+                };
 
-                    DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                    Canvas.AddDrawableTask(DiagonalAxesPaint);
-                    lineGeometry.CompleteTransition(null);
+                // acceleration center to bottom left
+                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
+                Canvas.AddDrawableTask(DiagonalAxesPaint);
+                lineGeometry.CompleteTransition(null);
 
-                    lineGeometry = new TLineGeometry
-                    {
-                        X = xPoints[i].X1,
-                        Y = xPoints[i].Y1,
-                        X1 = yPoints[i].X,
-                        Y1 = yPoints[i].Y
-                    };
+                lineGeometry = new TLineGeometry
+                {
+                    X = (float)(DrawMarginSize.Width * i) + DrawMarginLocation.X,
+                    Y = DrawMarginLocation.Y + DrawMarginSize.Height,
+                    X1 = DrawMarginLocation.X,
+                    Y1 =
+                        -(float)(DrawMarginSize.Height * i)
+                        + DrawMarginSize.Height
+                        + DrawMarginLocation.Y,
+                };
 
-                    DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                    Canvas.AddDrawableTask(DiagonalAxesPaint);
-                    lineGeometry.CompleteTransition(null);
+                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
+                Canvas.AddDrawableTask(DiagonalAxesPaint);
+                lineGeometry.CompleteTransition(null);
 
-                    lineGeometry = new TLineGeometry
-                    {
-                        X = xPoints[length - 1 - i].X,
-                        Y = xPoints[length - 1 - i].Y,
-                        X1 = yPoints[i].X,
-                        Y1 = yPoints[i].Y
-                    };
+                // displacement go top left to bottom right
+                // d = v/(2*pi*f)
 
-                    DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                    Canvas.AddDrawableTask(DiagonalAxesPaint);
-                    lineGeometry.CompleteTransition(null);
+                // displacement center to top left
+                lineGeometry = new TLineGeometry
+                {
+                    X = DrawMarginLocation.X,
+                    Y =
+                        -(float)(DrawMarginSize.Height * i)
+                        + DrawMarginSize.Height
+                        + DrawMarginLocation.Y,
+                    X1 = (float)(DrawMarginSize.Width * (1 - i)) + DrawMarginLocation.X,
+                    Y1 = DrawMarginLocation.Y,
+                };
 
-                    lineGeometry = new TLineGeometry
-                    {
-                        X = xPoints[length - 1 - i].X1,
-                        Y = xPoints[length - 1 - i].Y1,
-                        X1 = yPoints[i].X1,
-                        Y1 = yPoints[i].Y1
-                    };
+                // displacement center to bottom right
+                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
+                Canvas.AddDrawableTask(DiagonalAxesPaint);
+                lineGeometry.CompleteTransition(null);
 
-                    DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
-                    Canvas.AddDrawableTask(DiagonalAxesPaint);
-                    lineGeometry.CompleteTransition(null);
-                }
+                lineGeometry = new TLineGeometry
+                {
+                    X = DrawMarginLocation.X + DrawMarginSize.Width,
+                    Y =
+                        -(float)(DrawMarginSize.Height * i)
+                        + DrawMarginSize.Height
+                        + DrawMarginLocation.Y,
+                    X1 = (float)(DrawMarginSize.Width * (1 - i)) + DrawMarginLocation.X,
+                    Y1 = DrawMarginLocation.Y + DrawMarginSize.Height,
+                };
+
+                DiagonalAxesPaint.AddGeometryToPaintTask(Canvas, lineGeometry);
+                Canvas.AddDrawableTask(DiagonalAxesPaint);
+                lineGeometry.CompleteTransition(null);
             }
         }
     }
@@ -990,6 +1004,8 @@ public class TripartiteChart<TDrawingContext, TLineGeometry> : CartesianChart<TD
 
         Canvas.Invalidate();
         _isFirstDraw = false;
+
+        DrawDiagonalLines();
     }
 
     /// <inheritdoc cref="Chart{TDrawingContext}.Unload"/>

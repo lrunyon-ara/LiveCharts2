@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LiveChartsCore;
@@ -12,9 +13,41 @@ namespace ViewModelsSamples.Tripartite.Basic;
 
 public partial class ViewModel : ObservableObject
 {
+    private static int s_logBase = 10;
+
     public ISeries[] Series { get; set; } =
+        new[]
         {
-            new LineSeries<double> { Values = new double[] { 2, 1, 3, 5, 3, 4, 6 }, Fill = null }
+            new LineSeries<LiveChartsCore.Defaults.ObservablePoint>
+            {
+                Values = new[]
+                {
+                    new LiveChartsCore.Defaults.ObservablePoint
+                    {
+                        X = Math.Log(.3, s_logBase),
+                        Y = Math.Log(.2, s_logBase),
+                    },
+                    new LiveChartsCore.Defaults.ObservablePoint
+                    {
+                        X = Math.Log(3, s_logBase),
+                        Y = Math.Log(4, s_logBase),
+                    },
+                    new LiveChartsCore.Defaults.ObservablePoint
+                    {
+                        X = Math.Log(500, s_logBase),
+                        Y = Math.Log(.1, s_logBase),
+                    },
+                },
+                Stroke = new SolidColorPaint(SKColors.Red, 2),
+                Fill = null,
+                GeometrySize = 10,
+                GeometryStroke = new SolidColorPaint(SKColors.DarkBlue, 2),
+                GeometryFill = new SolidColorPaint(SKColors.White, 2),
+                LineSmoothness = 0,
+                Name = "Sample Data",
+                ClippingMode = LiveChartsCore.Measure.ClipMode.XY,
+                ZIndex = 3,
+            }
         };
 
     public DrawMarginFrame DrawMarginFrame { get; set; } =
@@ -29,26 +62,24 @@ public partial class ViewModel : ObservableObject
 
     public Axis[] XAxes { get; set; } =
         {
-            new Axis
+            new LogaritmicAxis(s_logBase)
             {
-                SeparatorsPaint = new SolidColorPaint(SKColors.Blue)
-                {
-                    ZIndex = 3,
-                    StrokeThickness = 2,
-                },
-            },
+                SeparatorsPaint = new SolidColorPaint(SKColors.LightGray) { ZIndex = 2, },
+                SubseparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray) { ZIndex = 2, },
+                MaxLimit = Math.Log(1000, s_logBase),
+                MinLimit = Math.Log(.1, s_logBase),
+            }
         };
 
     public Axis[] YAxes { get; set; } =
         {
-            new Axis
+            new LogaritmicAxis(s_logBase)
             {
-                SeparatorsPaint = new SolidColorPaint(SKColors.Blue)
-                {
-                    ZIndex = 3,
-                    StrokeThickness = 2,
-                },
-            },
+                SeparatorsPaint = new SolidColorPaint(SKColors.LightGray) { ZIndex = 2, },
+                SubseparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray) { ZIndex = 2, },
+                MaxLimit = Math.Log(10, s_logBase),
+                MinLimit = Math.Log(.001, s_logBase),
+            }
         };
 
     public LabelVisual Title { get; set; } =
