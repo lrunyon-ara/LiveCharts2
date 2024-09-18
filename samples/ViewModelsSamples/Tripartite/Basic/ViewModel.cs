@@ -38,6 +38,13 @@ public partial class ViewModel : ObservableObject
                         Y = Math.Log(.1, s_logBase),
                     },
                 },
+                //Values = new[]
+                //{
+                //    new LiveChartsCore.Defaults.ObservablePoint { X = .3, Y = .2, },
+                //    new LiveChartsCore.Defaults.ObservablePoint { X = 3, Y = 4, },
+                //    new LiveChartsCore.Defaults.ObservablePoint { X = 500, Y = .1, },
+                //},
+
                 Stroke = new SolidColorPaint(SKColors.Red, 2),
                 Fill = null,
                 GeometrySize = 10,
@@ -65,7 +72,7 @@ public partial class ViewModel : ObservableObject
             LabelsPaint = new SolidColorPaint()
             {
                 Color = SKColors.Black,
-                ZIndex = 2,
+                ZIndex = 5,
                 StrokeThickness = 1,
             }
         };
@@ -78,6 +85,10 @@ public partial class ViewModel : ObservableObject
                 SubseparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray) { ZIndex = 2, },
                 MaxLimit = Math.Log(1000, s_logBase),
                 MinLimit = Math.Log(.1, s_logBase),
+                SubseparatorsCount = 10,
+                SubticksPaint = new SolidColorPaint(SKColors.Blue) { ZIndex = 2, },
+                //MinStep = .5
+                Name = "Frequency (Hz)"
             }
         };
 
@@ -89,6 +100,10 @@ public partial class ViewModel : ObservableObject
                 SubseparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray) { ZIndex = 2, },
                 MaxLimit = Math.Log(10, s_logBase),
                 MinLimit = Math.Log(.001, s_logBase),
+                SubseparatorsCount = 10,
+                SubticksPaint = new SolidColorPaint(SKColors.Blue) { ZIndex = 2, },
+                //MinStep = .5
+                Name = "PsuedoVelocity (in/sec)"
             }
         };
 

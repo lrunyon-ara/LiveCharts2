@@ -21,10 +21,12 @@
 // SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.Serialization;
+using System.Linq;
 using LiveChartsCore.Drawing;
 using LiveChartsCore.Kernel;
+using LiveChartsCore.Measure;
 
 namespace LiveChartsCore;
 
@@ -101,6 +103,24 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
     private bool _isInitialized = false;
 
     /// <summary>
+    /// used to store start and end points
+    /// </summary>
+    public class DiagonalLine
+    {
+        public LvcPoint Start { get; set; }
+        public LvcPoint End { get; set; }
+
+        public string Displacement { get; set; }
+
+        public DiagonalLine(LvcPoint start, LvcPoint end, string displacement)
+        {
+            Start = start;
+            End = end;
+            Displacement = displacement;
+        }
+    }
+
+    /// <summary>
     /// Invalidates the specified chart.
     /// </summary>
     /// <param name="chart">The chart.</param>
@@ -115,9 +135,11 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         if (DiagonalSeparatorsPaint is null)
             return;
 
+        // chart bounds
         var drawMarginLocation = chart.DrawMarginLocation;
         var drawMarginSize = chart.DrawMarginSize;
 
+        // fed into scalers
         var xAxis = tripartiteChart.XAxes[0];
         var yAxis = tripartiteChart.YAxes[0];
 
@@ -125,51 +147,69 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         if (!xAxis.IsVisible || !yAxis.IsVisible)
             return;
 
-        // we may yet need this
-        //var xScaler = new Scaler(DrawMarginLocation, DrawMarginSize, xAxis);
-        //var yScaler = new Scaler(DrawMarginLocation, DrawMarginSize, yAxis);
+        // the scalers that translate our pixel values to unit values on chart, and vice versa
+        var xScaler = new Scaler(drawMarginLocation, drawMarginSize, xAxis);
+        var yScaler = new Scaler(drawMarginLocation, drawMarginSize, yAxis);
 
-        var labelAngle = (float)(
-            Math.Atan2(
-                drawMarginSize.Height - drawMarginLocation.Y,
-                drawMarginSize.Width - drawMarginLocation.X
-            ) * (180.0 / Math.PI)
-        );
+        // we calculate the minimum and maximums for each of our axes
+        var minFrequency = xAxis.LogBase is not null
+            ? Math.Pow(xAxis.LogBase ?? 10, xScaler.ToChartValues(drawMarginLocation.X))
+            : xScaler.ToChartValues(drawMarginLocation.X);
+        var maxFrequency = xAxis.LogBase is not null
+            ? Math.Pow(
+                xAxis.LogBase ?? 10,
+                xScaler.ToChartValues(drawMarginSize.Width + drawMarginLocation.X)
+            )
+            : xScaler.ToChartValues(drawMarginSize.Width + drawMarginLocation.X);
+        var maxPseudoVelocity = yAxis.LogBase is not null
+            ? Math.Pow(yAxis.LogBase ?? 10, yScaler.ToChartValues(drawMarginLocation.Y))
+            : yScaler.ToChartValues(drawMarginLocation.Y);
+        var minPseudoVelocity = yAxis.LogBase is not null
+            ? Math.Pow(
+                yAxis.LogBase ?? 10,
+                yScaler.ToChartValues(drawMarginSize.Height + drawMarginLocation.Y)
+            )
+            : yScaler.ToChartValues(drawMarginSize.Height + drawMarginLocation.Y);
+
+        // generates all our displacement/acceleration lines and labels
+        var displacementLines = GenerateAccelerationLines(
+                minFrequency,
+                maxFrequency,
+                minPseudoVelocity,
+                maxPseudoVelocity,
+                10
+            )
+            .Concat(
+                GenerateDisplacementLines(
+                    minFrequency,
+                    maxFrequency,
+                    minPseudoVelocity,
+                    maxPseudoVelocity,
+                    10
+                )
+            )
+            .ToList();
 
         float x,
             y,
             x1,
             y1;
-        for (double i = 0; i <= 1; i += 0.1)
+        var index = 0;
+
+        foreach (var item in displacementLines)
         {
-            // acceleration go bottom left to top right
-            // a = -2*pi*f*v
-
-            // acceleration center to top right
-            x = (float)(drawMarginSize.Width * i) + drawMarginLocation.X;
-            y = drawMarginLocation.Y;
-            x1 = drawMarginSize.Width + drawMarginLocation.X;
-            y1 = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
-
-            _lineGeometry = new TLineGeometry
-            {
-                X = x,
-                Y = y,
-                X1 = x1,
-                Y1 = y1,
-            };
-
-            DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
-            tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
-            _lineGeometry.CompleteTransition(null);
-
-            AddLabelTask(chart, x, y, x1, y1, labelAngle, i);
-
-            // acceleration center to bottom left
-            x = (float)(drawMarginSize.Width * i) + drawMarginLocation.X;
-            y = drawMarginLocation.Y + drawMarginSize.Height;
-            x1 = drawMarginLocation.X;
-            y1 = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
+            x = xAxis.LogBase is not null
+                ? (float)xScaler.ToPixels(Math.Log(item.Start.X, xAxis.LogBase ?? 10))
+                : xScaler.ToPixels(item.Start.X);
+            y = yAxis.LogBase is not null
+                ? (float)yScaler.ToPixels(Math.Log(item.Start.Y, yAxis.LogBase ?? 10))
+                : yScaler.ToPixels(item.Start.Y);
+            x1 = xAxis.LogBase is not null
+                ? (float)xScaler.ToPixels(Math.Log(item.End.X, xAxis.LogBase ?? 10))
+                : xScaler.ToPixels(item.End.X);
+            y1 = yAxis.LogBase is not null
+                ? (float)yScaler.ToPixels(Math.Log(item.End.Y, yAxis.LogBase ?? 10))
+                : yScaler.ToPixels(item.End.Y);
 
             _lineGeometry = new TLineGeometry
             {
@@ -178,55 +218,39 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 X1 = x1,
                 Y1 = y1,
             };
-
             DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
             tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
             _lineGeometry.CompleteTransition(null);
 
-            AddLabelTask(chart, x, y, x1, y1, labelAngle, i);
+            var angleDegrees = (float)(
+                Math.Atan(displacementLines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002)
+                * (180 / Math.PI)
+            );
 
-            // displacement go top left to bottom right
-            // d = v/(2*pi*f)
-
-            // displacement center to top left
-            x = drawMarginLocation.X;
-            y = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
-            x1 = (float)(drawMarginSize.Width * (1 - i)) + drawMarginLocation.X;
-            y1 = drawMarginLocation.Y;
-
-            _lineGeometry = new TLineGeometry
+            if (
+                LabelsPaint is not null
+                // ensure that our middle lines do not have labels
+                && index != Math.Ceiling((displacementLines.Count - 1) * .25)
+                && index != Math.Floor((displacementLines.Count - 1) * .25)
+                && index != Math.Ceiling((displacementLines.Count - 1) * .75)
+                && index != Math.Floor((displacementLines.Count - 1) * .75)
+            )
             {
-                X = x,
-                Y = y,
-                X1 = x1,
-                Y1 = y1,
-            };
+                _textGeometry = new TTextGeometry
+                {
+                    Text = item.Displacement,
+                    TextSize = 16,
+                    X = (x1 - x) / 2 + x,
+                    Y = (y1 - y) / 2 + y,
+                    RotateTransform = angleDegrees,
+                };
 
-            // displacement center to bottom right
-            DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
-            tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
-            _lineGeometry.CompleteTransition(null);
+                LabelsPaint.AddGeometryToPaintTask(chart.Canvas, _textGeometry);
+                chart.Canvas.AddDrawableTask(LabelsPaint);
+                _textGeometry.CompleteTransition(null);
+            }
 
-            AddLabelTask(chart, x, y, x1, y1, -labelAngle, i);
-
-            x = drawMarginLocation.X + drawMarginSize.Width;
-            y = -(float)(drawMarginSize.Height * i) + drawMarginSize.Height + drawMarginLocation.Y;
-            x1 = (float)(drawMarginSize.Width * (1 - i)) + drawMarginLocation.X;
-            y1 = drawMarginLocation.Y + drawMarginSize.Height;
-
-            _lineGeometry = new TLineGeometry
-            {
-                X = x,
-                Y = y,
-                X1 = x1,
-                Y1 = y1,
-            };
-
-            DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
-            tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
-            _lineGeometry.CompleteTransition(null);
-
-            AddLabelTask(chart, x, y, x1, y1, -labelAngle, i);
+            index++;
         }
 
         if (!_isInitialized)
@@ -237,33 +261,193 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         }
     }
 
-    private const double LOWERBOUNDS = .1;
-    private const double UPPERBOUNDS = .8;
-
-    private void AddLabelTask(
-        Chart<TDrawingContext> chart,
-        float x,
-        float y,
-        float x1,
-        float y1,
-        float angle,
-        double iteration
+    #region Helper Functions
+    /// <summary>
+    /// Function to generate displacement lines
+    /// </summary>
+    /// <param name="minFrequency"></param>
+    /// <param name="maxFrequency"></param>
+    /// <param name="minPseudoVelocity"></param>
+    /// <param name="maxPseudoVelocity"></param>
+    /// <param name="numberOfLines"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static List<DiagonalLine> GenerateDisplacementLines(
+        double minFrequency,
+        double maxFrequency,
+        double minPseudoVelocity,
+        double maxPseudoVelocity,
+        int numberOfLines
     )
     {
-        // the numbers keep the labels from clipping
-        if (LabelsPaint is not null && iteration > LOWERBOUNDS && iteration < UPPERBOUNDS)
-        {
-            _textGeometry = new TTextGeometry
-            {
-                Text = "xxxxxx in.",
-                X = (x1 - x) / 2 + x,
-                Y = (y1 - y) / 2 + y,
-                RotateTransform = angle,
-            };
+        // initialize return array
+        var diagonalLines = new List<DiagonalLine>();
 
-            LabelsPaint.AddGeometryToPaintTask(chart.Canvas, _textGeometry);
-            chart.Canvas.AddDrawableTask(LabelsPaint);
-            _textGeometry.CompleteTransition(null);
+        // Ensure valid input
+        if (
+            numberOfLines <= 0
+            || minFrequency >= maxFrequency
+            || minPseudoVelocity >= maxPseudoVelocity
+        )
+        {
+            throw new ArgumentException("Invalid bounds or number of lines.");
         }
+
+        // d = v / (2 * pi * f).
+        // step corresponds to the "slices" in between lines
+        var minDisplacement = minPseudoVelocity / (2 * Math.PI * maxFrequency);
+        var maxDisplacement = maxPseudoVelocity / (2 * Math.PI * minFrequency);
+        var displacementStep =
+            (Math.Log10(maxDisplacement) - Math.Log10(minDisplacement)) / (numberOfLines + 1);
+
+        double currentDisplacement,
+            startFrequency,
+            startPseudoVelocity,
+            endPseudoVelocity,
+            endFrequency;
+
+        // finally, generate lines
+        for (var i = 0; i < numberOfLines + 2; i++)
+        {
+            currentDisplacement = Math.Pow(10, Math.Log10(minDisplacement) + i * displacementStep);
+
+            // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
+            startFrequency = minFrequency;
+            startPseudoVelocity = currentDisplacement * (2 * Math.PI * startFrequency);
+
+            // to prevent clipping on bottom of chart, if our acceleration is below the minimum
+            if (startPseudoVelocity < minPseudoVelocity)
+            {
+                startPseudoVelocity = minPseudoVelocity;
+                startFrequency = startPseudoVelocity / (2 * Math.PI * currentDisplacement);
+            }
+
+            endPseudoVelocity = maxPseudoVelocity;
+            endFrequency = endPseudoVelocity / (2 * Math.PI * currentDisplacement);
+
+            // to prevent clipping on top of chart, if our frequency is above the maximum
+            if (endFrequency > maxFrequency)
+            {
+                endFrequency = maxFrequency;
+                endPseudoVelocity = currentDisplacement * (2 * Math.PI * endFrequency);
+            }
+
+            // Create diagonal line from min frequency to max frequency
+            var startPoint = new LvcPoint(startFrequency, startPseudoVelocity);
+            var endPoint = new LvcPoint(endFrequency, endPseudoVelocity);
+
+            diagonalLines.Add(
+                new DiagonalLine(startPoint, endPoint, $"{FormatNumber(currentDisplacement)} in.")
+            );
+        }
+
+        // filter out lines where both points are the same
+        return diagonalLines.Where(line => line.Start != line.End).ToList();
     }
+
+    // 1g ≈ 386.4in/sec ^ 2
+    private const double GRAVITY = 386.4;
+
+    /// <summary>
+    /// Function to generate acceleration lines
+    /// </summary>
+    /// <param name="minFrequency"></param>
+    /// <param name="maxFrequency"></param>
+    /// <param name="minPseudoVelocity"></param>
+    /// <param name="maxPseudoVelocity"></param>
+    /// <param name="numberOfLines"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static List<DiagonalLine> GenerateAccelerationLines(
+        double minFrequency,
+        double maxFrequency,
+        double minPseudoVelocity,
+        double maxPseudoVelocity,
+        int numberOfLines
+    )
+    {
+        // initialize return array
+        var diagonalLines = new List<DiagonalLine>();
+
+        // Ensure valid input
+        if (
+            numberOfLines <= 0
+            || minFrequency >= maxFrequency
+            || minPseudoVelocity >= maxPseudoVelocity
+        )
+        {
+            throw new ArgumentException("Invalid bounds or number of lines.");
+        }
+
+        // a = -2 * pi * f * v
+        // step corresponds to the "slices" in between lines
+        var minAcceleration = minPseudoVelocity * (2 * Math.PI * minFrequency) / GRAVITY;
+        var maxAcceleration = maxPseudoVelocity * (2 * Math.PI * maxFrequency) / GRAVITY;
+
+        var accelerationStep =
+            (Math.Log10(maxAcceleration) - Math.Log10(minAcceleration)) / (numberOfLines + 1);
+
+        double currentAcceleration,
+            startFrequency,
+            startPseudoVelocity,
+            endPseudoVelocity,
+            endFrequency;
+
+        // finally, generate lines
+        for (var i = 0; i < numberOfLines + 2; i++)
+        {
+            currentAcceleration = Math.Pow(10, Math.Log10(minAcceleration) + i * accelerationStep);
+
+            // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
+            startFrequency = minFrequency;
+            startPseudoVelocity = currentAcceleration * GRAVITY / (2 * Math.PI * startFrequency);
+
+            // to prevent clipping on top of chart, if our acceleration is above the maximum
+            if (startPseudoVelocity > maxPseudoVelocity)
+            {
+                startPseudoVelocity = maxPseudoVelocity;
+                startFrequency =
+                    currentAcceleration * GRAVITY / (2 * Math.PI * startPseudoVelocity);
+            }
+
+            endPseudoVelocity = minPseudoVelocity;
+            endFrequency = currentAcceleration * GRAVITY / (2 * Math.PI * endPseudoVelocity);
+
+            // to prevent clipping on top of chart, if our frequency is above the maximum
+            if (endFrequency > maxFrequency)
+            {
+                endFrequency = maxFrequency;
+                endPseudoVelocity = currentAcceleration * GRAVITY / (2 * Math.PI * endFrequency);
+            }
+
+            // Create diagonal line from min frequency to max frequency
+            var startPoint = new LvcPoint(startFrequency, startPseudoVelocity);
+            var endPoint = new LvcPoint(endFrequency, endPseudoVelocity);
+
+            diagonalLines.Add(
+                new DiagonalLine(startPoint, endPoint, $"{FormatNumber(currentAcceleration)} g")
+            );
+        }
+
+        // filter out lines where both points are the same
+        return diagonalLines.Where(line => line.Start != line.End).ToList();
+    }
+
+    private static string FormatNumber(double number)
+    {
+        string formattedNumber;
+        // Check if the number is less than 0.0001
+        if (Math.Abs(number) < 0.0001)
+        {
+            // Convert to scientific notation
+            formattedNumber = number.ToString("E4"); // "E4" means scientific notation with 4 decimal places
+        }
+        else
+        {
+            // Use the original number as a string
+            formattedNumber = Math.Round(number, 4).ToString();
+        }
+        return formattedNumber;
+    }
+    #endregion
 }

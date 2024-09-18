@@ -245,6 +245,11 @@ public interface ICartesianAxis<TDrawingContext> : ICartesianAxis
     bool CrosshairSnapEnabled { get; set; }
 
     /// <summary>
+    /// Gets the log base
+    /// </summary>
+    double? LogBase { get; }
+
+    /// <summary>
     /// Invalidates the crosshair visual.
     /// </summary>
     /// <param name="chart">The chart.</param>
