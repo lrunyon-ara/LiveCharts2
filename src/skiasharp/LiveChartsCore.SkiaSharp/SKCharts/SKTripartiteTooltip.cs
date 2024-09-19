@@ -28,6 +28,7 @@ using LiveChartsCore.Drawing;
 using LiveChartsCore.Kernel;
 using LiveChartsCore.Kernel.Helpers;
 using LiveChartsCore.Kernel.Sketches;
+using LiveChartsCore.Measure;
 using LiveChartsCore.SkiaSharpView.Drawing;
 using LiveChartsCore.SkiaSharpView.Drawing.Geometries;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -237,11 +238,15 @@ public class SKTripartiteTooltip : IChartTooltip<SkiaSharpDrawingContext>
                     var y = double.Parse(
                         tripartiteChart.YAxes[0].Labeler(point.Coordinate.PrimaryValue)
                     );
+                    var tripartiteUnits = TripartiteUnitProvider.GetUnits(
+                        tripartiteChart.TripartiteUnits
+                    );
 
                     tableLayout.AddChild(
                         new LabelVisual
                         {
-                            Text = $"D = {TripartiteHelpers.FormatNumber(GetDisplacement(x, y))}, ",
+                            Text =
+                                $"D = {TripartiteHelpers.GetFormattedDisplacement(x, y, tripartiteUnits)}, ",
                             Paint = FontPaint,
                             TextSize = TextSize,
                             Padding = new Padding(10, 0, 0, 0),
@@ -259,7 +264,7 @@ public class SKTripartiteTooltip : IChartTooltip<SkiaSharpDrawingContext>
                         new LabelVisual
                         {
                             Text =
-                                $"A = {TripartiteHelpers.FormatNumber(GetAcceleration(x, y))} {(ltr ? ", " : "")}",
+                                $"A = {TripartiteHelpers.GetFormattedAcceleration(x, y, tripartiteUnits)} {(ltr ? ", " : "")}",
                             Paint = FontPaint,
                             TextSize = TextSize,
                             Padding = new Padding(10, 0, 0, 0),
@@ -318,26 +323,5 @@ public class SKTripartiteTooltip : IChartTooltip<SkiaSharpDrawingContext>
         if (chart is null || _panel is null)
             return;
         chart.RemoveVisual(_panel);
-    }
-
-    //TODO: maybe move this to a helper method once we have to start
-    // doing calculations with other units
-    private static double GetDisplacement(double x, double y)
-    {
-        // d = v / (2 * pi * f).
-        var displacement = y / (2 * Math.PI * x);
-
-        return displacement;
-    }
-
-    private const double GRAVITY = 386.4;
-
-    //TODO: above
-    private static double GetAcceleration(double x, double y)
-    {
-        // a = -2 * pi * f * v
-        var acceleration = y * (2 * Math.PI * x) / GRAVITY;
-
-        return acceleration;
     }
 }

@@ -100,6 +100,8 @@ public partial class ViewModel : ObservableObject
             }
         };
 
+    public TripartiteUnitOption TripartiteUnits { get; set; } = TripartiteUnitOption.A;
+
     public Axis[] XAxes { get; set; } =
         {
             new LogaritmicAxis(s_logBase)

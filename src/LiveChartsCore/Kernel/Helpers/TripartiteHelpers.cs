@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 using System;
+using LiveChartsCore.Drawing;
+using LiveChartsCore.Measure;
 
 namespace LiveChartsCore.Kernel.Helpers;
 
@@ -41,5 +43,43 @@ public static class TripartiteHelpers
             formattedNumber = Math.Round(number, 4).ToString();
         }
         return formattedNumber;
+    }
+
+    public static double GetDisplacement(double x, double y, double scale)
+    {
+        // d = v / (2 * pi * f).
+        return y / (2 * Math.PI * x) / scale;
+    }
+
+    public static double GetAcceleration(double x, double y, double scale)
+    {
+        // a = -2 * pi * f * v
+        return y * (2 * Math.PI * x) / scale;
+    }
+
+    public static string GetFormattedDisplacement(
+        double x,
+        double y,
+        TripartiteUnit tripartiteUnits
+    )
+    {
+        return $"{TripartiteHelpers.FormatNumber(TripartiteHelpers.GetDisplacement(
+            x,
+            y,
+            tripartiteUnits.DisplacementScale
+        ))} {tripartiteUnits.DisplacementUnit}";
+    }
+
+    public static string GetFormattedAcceleration(
+        double x,
+        double y,
+        TripartiteUnit tripartiteUnits
+    )
+    {
+        return $"{TripartiteHelpers.FormatNumber(TripartiteHelpers.GetAcceleration(
+            x,
+            y,
+            tripartiteUnits.AccelerationScale
+        ))} {tripartiteUnits.AccelerationUnit}";
     }
 }

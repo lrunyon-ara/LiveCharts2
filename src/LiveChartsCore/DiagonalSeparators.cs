@@ -144,6 +144,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         var xAxis = tripartiteChart.XAxes[0];
         var yAxis = tripartiteChart.YAxes[0];
 
+        var tripartiteUnits = TripartiteUnitProvider.GetUnits(tripartiteChart.TripartiteUnits);
+
         // if neither axis is visible then we don't draw our diagonal lines
         if (!xAxis.IsVisible || !yAxis.IsVisible)
             return;
@@ -178,7 +180,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 maxFrequency,
                 minPseudoVelocity,
                 maxPseudoVelocity,
-                10
+                10,
+                tripartiteUnits
             )
             .Concat(
                 GenerateDisplacementLines(
@@ -186,7 +189,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                     maxFrequency,
                     minPseudoVelocity,
                     maxPseudoVelocity,
-                    10
+                    10,
+                    tripartiteUnits
                 )
             )
             .ToList();
@@ -278,7 +282,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double maxFrequency,
         double minPseudoVelocity,
         double maxPseudoVelocity,
-        int numberOfLines
+        int numberOfLines,
+        TripartiteUnit tripartiteUnit
     )
     {
         // initialize return array
@@ -296,8 +301,10 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
         // d = v / (2 * pi * f).
         // step corresponds to the "slices" in between lines
-        var minDisplacement = minPseudoVelocity / (2 * Math.PI * maxFrequency);
-        var maxDisplacement = maxPseudoVelocity / (2 * Math.PI * minFrequency);
+        var minDisplacement =
+            minPseudoVelocity / (2 * Math.PI * maxFrequency) / tripartiteUnit.DisplacementScale;
+        var maxDisplacement =
+            maxPseudoVelocity / (2 * Math.PI * minFrequency) / tripartiteUnit.DisplacementScale;
         var displacementStep =
             (Math.Log10(maxDisplacement) - Math.Log10(minDisplacement)) / (numberOfLines + 1);
 
@@ -314,23 +321,33 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
-            startPseudoVelocity = currentDisplacement * (2 * Math.PI * startFrequency);
+            startPseudoVelocity =
+                currentDisplacement
+                * tripartiteUnit.DisplacementScale
+                * (2 * Math.PI * startFrequency);
 
             // to prevent clipping on bottom of chart, if our acceleration is below the minimum
             if (startPseudoVelocity < minPseudoVelocity)
             {
                 startPseudoVelocity = minPseudoVelocity;
-                startFrequency = startPseudoVelocity / (2 * Math.PI * currentDisplacement);
+                startFrequency =
+                    startPseudoVelocity
+                    / (2 * Math.PI * currentDisplacement * tripartiteUnit.DisplacementScale);
             }
 
             endPseudoVelocity = maxPseudoVelocity;
-            endFrequency = endPseudoVelocity / (2 * Math.PI * currentDisplacement);
+            endFrequency =
+                endPseudoVelocity
+                / (2 * Math.PI * currentDisplacement * tripartiteUnit.DisplacementScale);
 
             // to prevent clipping on top of chart, if our frequency is above the maximum
             if (endFrequency > maxFrequency)
             {
                 endFrequency = maxFrequency;
-                endPseudoVelocity = currentDisplacement * (2 * Math.PI * endFrequency);
+                endPseudoVelocity =
+                    currentDisplacement
+                    * tripartiteUnit.DisplacementScale
+                    * (2 * Math.PI * endFrequency);
             }
 
             // Create diagonal line from min frequency to max frequency
@@ -341,7 +358,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 new DiagonalLine(
                     startPoint,
                     endPoint,
-                    $"{TripartiteHelpers.FormatNumber(currentDisplacement)} in."
+                    $"{TripartiteHelpers.FormatNumber(currentDisplacement)} {tripartiteUnit.DisplacementUnit}"
                 )
             );
         }
@@ -349,9 +366,6 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         // filter out lines where both points are the same
         return diagonalLines.Where(line => line.Start != line.End).ToList();
     }
-
-    // 1g ≈ 386.4in/sec ^ 2
-    private const double GRAVITY = 386.4;
 
     /// <summary>
     /// Function to generate acceleration lines
@@ -368,7 +382,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double maxFrequency,
         double minPseudoVelocity,
         double maxPseudoVelocity,
-        int numberOfLines
+        int numberOfLines,
+        TripartiteUnit tripartiteUnit
     )
     {
         // initialize return array
@@ -386,8 +401,10 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
         // a = -2 * pi * f * v
         // step corresponds to the "slices" in between lines
-        var minAcceleration = minPseudoVelocity * (2 * Math.PI * minFrequency) / GRAVITY;
-        var maxAcceleration = maxPseudoVelocity * (2 * Math.PI * maxFrequency) / GRAVITY;
+        var minAcceleration =
+            minPseudoVelocity * (2 * Math.PI * minFrequency) / tripartiteUnit.AccelerationScale;
+        var maxAcceleration =
+            maxPseudoVelocity * (2 * Math.PI * maxFrequency) / tripartiteUnit.AccelerationScale;
 
         var accelerationStep =
             (Math.Log10(maxAcceleration) - Math.Log10(minAcceleration)) / (numberOfLines + 1);
@@ -405,24 +422,35 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
-            startPseudoVelocity = currentAcceleration * GRAVITY / (2 * Math.PI * startFrequency);
+            startPseudoVelocity =
+                currentAcceleration
+                * tripartiteUnit.AccelerationScale
+                / (2 * Math.PI * startFrequency);
 
             // to prevent clipping on top of chart, if our acceleration is above the maximum
             if (startPseudoVelocity > maxPseudoVelocity)
             {
                 startPseudoVelocity = maxPseudoVelocity;
                 startFrequency =
-                    currentAcceleration * GRAVITY / (2 * Math.PI * startPseudoVelocity);
+                    currentAcceleration
+                    * tripartiteUnit.AccelerationScale
+                    / (2 * Math.PI * startPseudoVelocity);
             }
 
             endPseudoVelocity = minPseudoVelocity;
-            endFrequency = currentAcceleration * GRAVITY / (2 * Math.PI * endPseudoVelocity);
+            endFrequency =
+                currentAcceleration
+                * tripartiteUnit.AccelerationScale
+                / (2 * Math.PI * endPseudoVelocity);
 
             // to prevent clipping on top of chart, if our frequency is above the maximum
             if (endFrequency > maxFrequency)
             {
                 endFrequency = maxFrequency;
-                endPseudoVelocity = currentAcceleration * GRAVITY / (2 * Math.PI * endFrequency);
+                endPseudoVelocity =
+                    currentAcceleration
+                    * tripartiteUnit.AccelerationScale
+                    / (2 * Math.PI * endFrequency);
             }
 
             // Create diagonal line from min frequency to max frequency
@@ -433,7 +461,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 new DiagonalLine(
                     startPoint,
                     endPoint,
-                    $"{TripartiteHelpers.FormatNumber(currentAcceleration)} g"
+                    $"{TripartiteHelpers.FormatNumber(currentAcceleration)} {tripartiteUnit.AccelerationUnit}"
                 )
             );
         }

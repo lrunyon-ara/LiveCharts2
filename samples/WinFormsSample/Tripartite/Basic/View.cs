@@ -21,6 +21,7 @@ public partial class View : UserControl
             XAxes = viewModel.XAxes,
             YAxes = viewModel.YAxes,
             DiagonalSeparators = viewModel.DiagonalSeparators,
+            TripartiteUnits = viewModel.TripartiteUnits,
             Title = viewModel.Title,
             DrawMarginFrame = viewModel.DrawMarginFrame,
             Location = new System.Drawing.Point(0, 0),

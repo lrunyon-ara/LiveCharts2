@@ -77,6 +77,14 @@ public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
     public override IChartView<TDrawingContext> View => _chartView;
 
     /// <summary>
+    /// Gets or sets a value indicating whether this instance is zooming or panning.
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if this instance is zooming or panning; otherwise, <c>false</c>.
+    /// </value>
+    public TripartiteUnitOption TripartiteUnits { get; private set; }
+
+    /// <summary>
     /// Adds a visual element to the chart.
     /// </summary>
     public override void AddVisual(ChartElement<TDrawingContext> element)
@@ -397,6 +405,8 @@ public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
         TooltipPosition = _chartView.TooltipPosition;
         TooltipFindingStrategy = _chartView.TooltipFindingStrategy;
         Tooltip = _chartView.Tooltip;
+
+        TripartiteUnits = _chartView.TripartiteUnits;
 
         AnimationsSpeed = _chartView.AnimationsSpeed;
         EasingFunction = _chartView.EasingFunction;

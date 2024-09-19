@@ -40,11 +40,12 @@ public class TripartiteChart
         LineGeometry,
         LabelGeometry
     >? _diagonalSeparators;
+    private TripartiteUnitOption _tripartiteUnits;
 
     /// <summary>
     /// The tool tip
     /// </summary>
-    protected new IChartTooltip<SkiaSharpDrawingContext>? tooltip = new SKTripartiteTooltip();
+    protected new IChartTooltip<SkiaSharpDrawingContext>? _tooltip = new SKTripartiteTooltip();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TripartiteChart"/> class.
@@ -198,6 +199,18 @@ public class TripartiteChart
         }
     }
 
+    /// <inheritdoc cref="IChartView{TDrawingContext}.TripartiteUnits" />
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public TripartiteUnitOption TripartiteUnits
+    {
+        get => _tripartiteUnits;
+        set
+        {
+            _tripartiteUnits = value;
+            OnPropertyChanged();
+        }
+    }
+
     /// <inheritdoc cref="ITripartiteChartView{TDrawingContext}.ZoomMode" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public ZoomAndPanMode ZoomMode { get; set; } = LiveCharts.DefaultSettings.ZoomMode;
@@ -222,8 +235,12 @@ public class TripartiteChart
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public new IChartTooltip<SkiaSharpDrawingContext>? Tooltip
     {
-        get => tooltip;
-        set => tooltip = value;
+        get => _tooltip;
+        set
+        {
+            _tooltip = value;
+            OnPropertyChanged();
+        }
     }
 
     /// <summary>
