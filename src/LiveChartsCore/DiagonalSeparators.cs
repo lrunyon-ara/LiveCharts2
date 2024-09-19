@@ -26,6 +26,7 @@ using System.ComponentModel;
 using System.Linq;
 using LiveChartsCore.Drawing;
 using LiveChartsCore.Kernel;
+using LiveChartsCore.Kernel.Helpers;
 using LiveChartsCore.Measure;
 
 namespace LiveChartsCore;
@@ -110,13 +111,13 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         public LvcPoint Start { get; set; }
         public LvcPoint End { get; set; }
 
-        public string Displacement { get; set; }
+        public string Label { get; set; }
 
         public DiagonalLine(LvcPoint start, LvcPoint end, string displacement)
         {
             Start = start;
             End = end;
-            Displacement = displacement;
+            Label = displacement;
         }
     }
 
@@ -238,7 +239,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             {
                 _textGeometry = new TTextGeometry
                 {
-                    Text = item.Displacement,
+                    Text = item.Label,
                     TextSize = 16,
                     X = (x1 - x) / 2 + x,
                     Y = (y1 - y) / 2 + y,
@@ -337,7 +338,11 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             var endPoint = new LvcPoint(endFrequency, endPseudoVelocity);
 
             diagonalLines.Add(
-                new DiagonalLine(startPoint, endPoint, $"{FormatNumber(currentDisplacement)} in.")
+                new DiagonalLine(
+                    startPoint,
+                    endPoint,
+                    $"{TripartiteHelpers.FormatNumber(currentDisplacement)} in."
+                )
             );
         }
 
@@ -425,29 +430,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             var endPoint = new LvcPoint(endFrequency, endPseudoVelocity);
 
             diagonalLines.Add(
-                new DiagonalLine(startPoint, endPoint, $"{FormatNumber(currentAcceleration)} g")
+                new DiagonalLine(
+                    startPoint,
+                    endPoint,
+                    $"{TripartiteHelpers.FormatNumber(currentAcceleration)} g"
+                )
             );
         }
 
         // filter out lines where both points are the same
         return diagonalLines.Where(line => line.Start != line.End).ToList();
-    }
-
-    private static string FormatNumber(double number)
-    {
-        string formattedNumber;
-        // Check if the number is less than 0.0001
-        if (Math.Abs(number) < 0.0001)
-        {
-            // Convert to scientific notation
-            formattedNumber = number.ToString("E4"); // "E4" means scientific notation with 4 decimal places
-        }
-        else
-        {
-            // Use the original number as a string
-            formattedNumber = Math.Round(number, 4).ToString();
-        }
-        return formattedNumber;
     }
     #endregion
 }

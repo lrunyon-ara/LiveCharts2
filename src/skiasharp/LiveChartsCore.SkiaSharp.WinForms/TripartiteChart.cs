@@ -12,8 +12,8 @@ using LiveChartsCore.Measure;
 using LiveChartsCore.SkiaSharpView.Drawing;
 using LiveChartsCore.SkiaSharpView.Drawing.Geometries;
 using LiveChartsCore.SkiaSharpView.Painting;
+using LiveChartsCore.SkiaSharpView.SKCharts;
 using LiveChartsCore.VisualElements;
-using SkiaSharp;
 
 namespace LiveChartsCore.SkiaSharpView.WinForms;
 
@@ -40,6 +40,11 @@ public class TripartiteChart
         LineGeometry,
         LabelGeometry
     >? _diagonalSeparators;
+
+    /// <summary>
+    /// The tool tip
+    /// </summary>
+    protected new IChartTooltip<SkiaSharpDrawingContext>? tooltip = new SKTripartiteTooltip();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TripartiteChart"/> class.
@@ -211,6 +216,14 @@ public class TripartiteChart
             _tooltipFindingStrategy = value;
             OnPropertyChanged();
         }
+    }
+
+    /// <inheritdoc cref="IChartView{TDrawingContext}.Tooltip" />
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public new IChartTooltip<SkiaSharpDrawingContext>? Tooltip
+    {
+        get => tooltip;
+        set => tooltip = value;
     }
 
     /// <summary>

@@ -38,21 +38,44 @@ public partial class ViewModel : ObservableObject
                         Y = Math.Log(.1, s_logBase),
                     },
                 },
-                //Values = new[]
-                //{
-                //    new LiveChartsCore.Defaults.ObservablePoint { X = .3, Y = .2, },
-                //    new LiveChartsCore.Defaults.ObservablePoint { X = 3, Y = 4, },
-                //    new LiveChartsCore.Defaults.ObservablePoint { X = 500, Y = .1, },
-                //},
-
                 Stroke = new SolidColorPaint(SKColors.Red, 2),
                 Fill = null,
                 GeometrySize = 10,
-                GeometryStroke = new SolidColorPaint(SKColors.DarkBlue, 2),
+                GeometryStroke = new SolidColorPaint(SKColors.DarkRed, 2),
                 GeometryFill = new SolidColorPaint(SKColors.White, 2),
                 LineSmoothness = 0,
-                Name = "Sample Data",
-                ClippingMode = LiveChartsCore.Measure.ClipMode.XY,
+                Name = "Sample Data 1",
+                ClippingMode = ClipMode.XY,
+                ZIndex = 3,
+            },
+            new LineSeries<LiveChartsCore.Defaults.ObservablePoint>
+            {
+                Values = new[]
+                {
+                    new LiveChartsCore.Defaults.ObservablePoint
+                    {
+                        X = Math.Log(.3, s_logBase),
+                        Y = Math.Log(.3, s_logBase),
+                    },
+                    new LiveChartsCore.Defaults.ObservablePoint
+                    {
+                        X = Math.Log(3, s_logBase),
+                        Y = Math.Log(5, s_logBase),
+                    },
+                    new LiveChartsCore.Defaults.ObservablePoint
+                    {
+                        X = Math.Log(500, s_logBase),
+                        Y = Math.Log(.4, s_logBase),
+                    },
+                },
+                Stroke = new SolidColorPaint(SKColors.Green, 2),
+                Fill = null,
+                GeometrySize = 10,
+                GeometryStroke = new SolidColorPaint(SKColors.DarkGreen, 2),
+                GeometryFill = new SolidColorPaint(SKColors.White, 2),
+                LineSmoothness = 0,
+                Name = "Sample Data 2",
+                ClippingMode = ClipMode.XY,
                 ZIndex = 3,
             }
         };
@@ -87,7 +110,7 @@ public partial class ViewModel : ObservableObject
                 MinLimit = Math.Log(.1, s_logBase),
                 SubseparatorsCount = 10,
                 SubticksPaint = new SolidColorPaint(SKColors.Blue) { ZIndex = 2, },
-                //MinStep = .5
+                MinStep = .5,
                 Name = "Frequency (Hz)"
             }
         };
@@ -102,10 +125,12 @@ public partial class ViewModel : ObservableObject
                 MinLimit = Math.Log(.001, s_logBase),
                 SubseparatorsCount = 10,
                 SubticksPaint = new SolidColorPaint(SKColors.Blue) { ZIndex = 2, },
-                //MinStep = .5
+                MinStep = .5,
                 Name = "PsuedoVelocity (in/sec)"
             }
         };
+
+    public ZoomAndPanMode ZoomMode { get; set; } = ZoomAndPanMode.Both;
 
     public LabelVisual Title { get; set; } =
         new LabelVisual
