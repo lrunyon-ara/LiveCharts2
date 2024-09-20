@@ -40,7 +40,7 @@ public class TripartiteChart
         LineGeometry,
         LabelGeometry
     >? _diagonalSeparators;
-    private TripartiteUnit _tripartiteUnits;
+    private TripartiteUnit _tripartiteUnits = new(TripartiteUnitOption.A);
 
     /// <summary>
     /// The tool tip

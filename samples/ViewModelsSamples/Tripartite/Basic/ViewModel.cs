@@ -102,6 +102,8 @@ public partial class ViewModel : ObservableObject
             //, DrawIntermediateDiagonalLines = true
         };
 
+    //TODO: make nullable
+    // TODO: make spacing log
     public TripartiteUnit TripartiteUnits { get; set; } =
         new TripartiteUnit(TripartiteUnitOption.A);
 
@@ -116,7 +118,7 @@ public partial class ViewModel : ObservableObject
                 SubseparatorsCount = 10,
                 SubticksPaint = new SolidColorPaint(SKColors.Blue) { ZIndex = 2, },
                 MinStep = .5,
-                Name = "Frequency (Seconds)"
+                Name = "Frequency (Hz)"
             }
         };
 
