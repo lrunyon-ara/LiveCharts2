@@ -242,11 +242,14 @@ public class SKTripartiteTooltip : IChartTooltip<SkiaSharpDrawingContext>
                         tripartiteChart.TripartiteUnits
                     );
 
+                    var test = TripartiteHelpers.GetDisplacement(x, y, tripartiteUnits);
+                    var test2 = TripartiteHelpers.GetAcceleration(x, y, tripartiteUnits);
+
                     tableLayout.AddChild(
                         new LabelVisual
                         {
                             Text =
-                                $"D = {TripartiteHelpers.GetFormattedDisplacement(x, y, tripartiteUnits)}, ",
+                                $"{TripartiteHelpers.GetFormattedDisplacement(x, y, tripartiteUnits)}, ",
                             Paint = FontPaint,
                             TextSize = TextSize,
                             Padding = new Padding(10, 0, 0, 0),
@@ -264,7 +267,7 @@ public class SKTripartiteTooltip : IChartTooltip<SkiaSharpDrawingContext>
                         new LabelVisual
                         {
                             Text =
-                                $"A = {TripartiteHelpers.GetFormattedAcceleration(x, y, tripartiteUnits)} {(ltr ? ", " : "")}",
+                                $"{TripartiteHelpers.GetFormattedAcceleration(x, y, tripartiteUnits)} {(ltr ? ", " : "")}",
                             Paint = FontPaint,
                             TextSize = TextSize,
                             Padding = new Padding(10, 0, 0, 0),

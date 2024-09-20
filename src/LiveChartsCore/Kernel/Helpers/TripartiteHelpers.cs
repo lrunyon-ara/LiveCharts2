@@ -45,16 +45,72 @@ public static class TripartiteHelpers
         return formattedNumber;
     }
 
-    public static double GetDisplacement(double x, double y, double scale)
+    public static double GetDisplacement(double x, double y, TripartiteUnit tripartiteUnits)
     {
         // d = v / (2 * pi * f).
-        return y / (2 * Math.PI * x) / scale;
+        return y
+            / (2 * Math.PI * (tripartiteUnits.IsXReciprocal ? 1 / x : x))
+            / tripartiteUnits.DisplacementScale;
     }
 
-    public static double GetAcceleration(double x, double y, double scale)
+    public static double GetPseudoVelocityFromDisplacement(
+        double x,
+        double d,
+        TripartiteUnit tripartiteUnits
+    )
+    {
+        // y = d * 2 * pi * x .
+        return d
+            * 2
+            * Math.PI
+            * (tripartiteUnits.IsXReciprocal ? 1 / x : x)
+            * tripartiteUnits.DisplacementScale;
+    }
+
+    public static double GetFrequencyFromDisplacement(
+        double y,
+        double d,
+        TripartiteUnit tripartiteUnits
+    )
+    {
+        // x = (y / d * 2 * pi ).
+        return tripartiteUnits.IsXReciprocal
+            ? d * 2 * Math.PI * tripartiteUnits.DisplacementScale / y
+            : y / (d * 2 * Math.PI * tripartiteUnits.DisplacementScale);
+    }
+
+    public static double GetAcceleration(double x, double y, TripartiteUnit tripartiteUnits)
     {
         // a = -2 * pi * f * v
-        return y * (2 * Math.PI * x) / scale;
+        return y
+            * (2 * Math.PI * (tripartiteUnits.IsXReciprocal ? 1 / x : x))
+            / tripartiteUnits.AccelerationScale;
+    }
+
+    public static double GetFrequencyFromAcceleration(
+        double y,
+        double a,
+        TripartiteUnit tripartiteUnits
+    )
+    {
+        // x = a / (y * 2 * pi)
+        return (
+            tripartiteUnits.IsXReciprocal
+                ? y * 2 * Math.PI / (a * tripartiteUnits.AccelerationScale)
+                : a * tripartiteUnits.AccelerationScale / (y * 2 * Math.PI)
+        );
+    }
+
+    public static double GetPseudoVelocityFromAcceleration(
+        double x,
+        double a,
+        TripartiteUnit tripartiteUnits
+    )
+    {
+        // y = a  / (2 * pi * x)
+        return a
+            * tripartiteUnits.AccelerationScale
+            / (2 * Math.PI * (tripartiteUnits.IsXReciprocal ? 1 / x : x));
     }
 
     public static string GetFormattedDisplacement(
@@ -66,7 +122,7 @@ public static class TripartiteHelpers
         return $"{TripartiteHelpers.FormatNumber(TripartiteHelpers.GetDisplacement(
             x,
             y,
-            tripartiteUnits.DisplacementScale
+            tripartiteUnits
         ))} {tripartiteUnits.DisplacementUnit}";
     }
 
@@ -79,7 +135,7 @@ public static class TripartiteHelpers
         return $"{TripartiteHelpers.FormatNumber(TripartiteHelpers.GetAcceleration(
             x,
             y,
-            tripartiteUnits.AccelerationScale
+            tripartiteUnits
         ))} {tripartiteUnits.AccelerationUnit}";
     }
 }

@@ -29,13 +29,10 @@ public class TripartiteUnit
 {
     public string XUnit { get; set; }
     public string YUnit { get; set; }
+    public bool IsXReciprocal { get; set; }
     public string DisplacementUnit { get; set; }
-    public string AccelerationUnit { get; set; }
-
-    //TODO: figure out which we need and don't need
-    public double XScale { get; set; } = 1.0;
-    public double YScale { get; set; } = 1.0;
     public double DisplacementScale { get; set; } = 1.0;
+    public string AccelerationUnit { get; set; }
     public double AccelerationScale { get; set; } = 1.0;
 
     //TODO: comment
@@ -44,19 +41,17 @@ public class TripartiteUnit
         string yUnit,
         string displacementUnit,
         string dccelerationUnit,
-        double xScale = 1.0,
-        double yScale = 1.0,
         double displacementScale = 1.0,
-        double accelerationScale = 1.0
+        double accelerationScale = 1.0,
+        bool isXReciprocal = false
     )
     {
         XUnit = xUnit;
         YUnit = yUnit;
         DisplacementUnit = displacementUnit;
         AccelerationUnit = dccelerationUnit;
-        XScale = xScale;
-        YScale = yScale;
         DisplacementScale = displacementScale;
         AccelerationScale = accelerationScale;
+        IsXReciprocal = isXReciprocal;
     }
 }

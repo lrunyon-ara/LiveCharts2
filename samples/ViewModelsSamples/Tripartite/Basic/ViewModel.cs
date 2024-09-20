@@ -24,18 +24,18 @@ public partial class ViewModel : ObservableObject
                 {
                     new LiveChartsCore.Defaults.ObservablePoint
                     {
-                        X = Math.Log(.3, s_logBase),
-                        Y = Math.Log(.2, s_logBase),
+                        X = Math.Log(.3333, s_logBase),
+                        Y = Math.Log(.214, s_logBase),
                     },
                     new LiveChartsCore.Defaults.ObservablePoint
                     {
                         X = Math.Log(3, s_logBase),
-                        Y = Math.Log(4, s_logBase),
+                        Y = Math.Log(4.09, s_logBase),
                     },
                     new LiveChartsCore.Defaults.ObservablePoint
                     {
-                        X = Math.Log(500, s_logBase),
-                        Y = Math.Log(.1, s_logBase),
+                        X = Math.Log(511, s_logBase),
+                        Y = Math.Log(.01, s_logBase),
                     },
                 },
                 Stroke = new SolidColorPaint(SKColors.Red, 2),
@@ -88,7 +88,7 @@ public partial class ViewModel : ObservableObject
         {
             DiagonalSeparatorsPaint = new SolidColorPaint()
             {
-                Color = SKColors.LightGray,
+                Color = SKColors.DarkGray,
                 ZIndex = -1,
                 StrokeThickness = 1,
             },
@@ -98,6 +98,8 @@ public partial class ViewModel : ObservableObject
                 ZIndex = 5,
                 StrokeThickness = 1,
             }
+            //TODO:
+            //, DrawIntermediateDiagonalLines = true
         };
 
     public TripartiteUnitOption TripartiteUnits { get; set; } = TripartiteUnitOption.A;
@@ -113,7 +115,7 @@ public partial class ViewModel : ObservableObject
                 SubseparatorsCount = 10,
                 SubticksPaint = new SolidColorPaint(SKColors.Blue) { ZIndex = 2, },
                 MinStep = .5,
-                Name = "Frequency (Hz)"
+                Name = "Frequency (Seconds)"
             }
         };
 

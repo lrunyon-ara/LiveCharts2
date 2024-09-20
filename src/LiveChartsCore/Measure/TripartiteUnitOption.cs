@@ -33,11 +33,10 @@ public enum TripartiteUnitOption
     C,
     D,
     E,
-
-    //F,
-    //G,
-    //H,
-    //I,
-    //J,
+    F,
+    G,
+    H,
+    I,
+    J,
     //UserDefined
 }

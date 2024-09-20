@@ -174,17 +174,10 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             )
             : yScaler.ToChartValues(drawMarginSize.Height + drawMarginLocation.Y);
 
+        // TODO: would like to optimize these heavily
         // generates all our displacement/acceleration lines and labels
-        var displacementLines = GenerateAccelerationLines(
-                minFrequency,
-                maxFrequency,
-                minPseudoVelocity,
-                maxPseudoVelocity,
-                10,
-                tripartiteUnits
-            )
-            .Concat(
-                GenerateDisplacementLines(
+        var lines = !tripartiteUnits.IsXReciprocal
+            ? GenerateAccelerationLines(
                     minFrequency,
                     maxFrequency,
                     minPseudoVelocity,
@@ -192,8 +185,36 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                     10,
                     tripartiteUnits
                 )
-            )
-            .ToList();
+                .Concat(
+                    GenerateDisplacementLines(
+                        minFrequency,
+                        maxFrequency,
+                        minPseudoVelocity,
+                        maxPseudoVelocity,
+                        10,
+                        tripartiteUnits
+                    )
+                )
+                .ToList()
+            : GenerateAccelerationReciprocalLines(
+                    minFrequency,
+                    maxFrequency,
+                    minPseudoVelocity,
+                    maxPseudoVelocity,
+                    10,
+                    tripartiteUnits
+                )
+                .Concat(
+                    GenerateDisplacementReciprocalLines(
+                        minFrequency,
+                        maxFrequency,
+                        minPseudoVelocity,
+                        maxPseudoVelocity,
+                        10,
+                        tripartiteUnits
+                    )
+                )
+                .ToList();
 
         float x,
             y,
@@ -201,7 +222,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             y1;
         var index = 0;
 
-        foreach (var item in displacementLines)
+        foreach (var item in lines)
         {
             x = xAxis.LogBase is not null
                 ? (float)xScaler.ToPixels(Math.Log(item.Start.X, xAxis.LogBase ?? 10))
@@ -228,17 +249,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             _lineGeometry.CompleteTransition(null);
 
             var angleDegrees = (float)(
-                Math.Atan(displacementLines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002)
-                * (180 / Math.PI)
+                Math.Atan(lines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002) * (180 / Math.PI)
             );
 
             if (
                 LabelsPaint is not null
                 // ensure that our middle lines do not have labels
-                && index != Math.Ceiling((displacementLines.Count - 1) * .25)
-                && index != Math.Floor((displacementLines.Count - 1) * .25)
-                && index != Math.Ceiling((displacementLines.Count - 1) * .75)
-                && index != Math.Floor((displacementLines.Count - 1) * .75)
+                && index != Math.Ceiling((lines.Count - 1) * .25)
+                && index != Math.Floor((lines.Count - 1) * .25)
+                && index != Math.Ceiling((lines.Count - 1) * .75)
+                && index != Math.Floor((lines.Count - 1) * .75)
             )
             {
                 _textGeometry = new TTextGeometry
@@ -301,10 +321,17 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
         // d = v / (2 * pi * f).
         // step corresponds to the "slices" in between lines
-        var minDisplacement =
-            minPseudoVelocity / (2 * Math.PI * maxFrequency) / tripartiteUnit.DisplacementScale;
-        var maxDisplacement =
-            maxPseudoVelocity / (2 * Math.PI * minFrequency) / tripartiteUnit.DisplacementScale;
+        var minDisplacement = TripartiteHelpers.GetDisplacement(
+            maxFrequency,
+            minPseudoVelocity,
+            tripartiteUnit
+        );
+        var maxDisplacement = TripartiteHelpers.GetDisplacement(
+            minFrequency,
+            maxPseudoVelocity,
+            tripartiteUnit
+        );
+
         var displacementStep =
             (Math.Log10(maxDisplacement) - Math.Log10(minDisplacement)) / (numberOfLines + 1);
 
@@ -321,33 +348,152 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
-            startPseudoVelocity =
-                currentDisplacement
-                * tripartiteUnit.DisplacementScale
-                * (2 * Math.PI * startFrequency);
+            startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
+                startFrequency,
+                currentDisplacement,
+                tripartiteUnit
+            );
 
             // to prevent clipping on bottom of chart, if our acceleration is below the minimum
             if (startPseudoVelocity < minPseudoVelocity)
             {
                 startPseudoVelocity = minPseudoVelocity;
-                startFrequency =
-                    startPseudoVelocity
-                    / (2 * Math.PI * currentDisplacement * tripartiteUnit.DisplacementScale);
+                startFrequency = TripartiteHelpers.GetFrequencyFromDisplacement(
+                    startPseudoVelocity,
+                    currentDisplacement,
+                    tripartiteUnit
+                );
             }
 
             endPseudoVelocity = maxPseudoVelocity;
-            endFrequency =
-                endPseudoVelocity
-                / (2 * Math.PI * currentDisplacement * tripartiteUnit.DisplacementScale);
+            endFrequency = TripartiteHelpers.GetFrequencyFromDisplacement(
+                endPseudoVelocity,
+                currentDisplacement,
+                tripartiteUnit
+            );
 
             // to prevent clipping on top of chart, if our frequency is above the maximum
             if (endFrequency > maxFrequency)
             {
                 endFrequency = maxFrequency;
-                endPseudoVelocity =
-                    currentDisplacement
-                    * tripartiteUnit.DisplacementScale
-                    * (2 * Math.PI * endFrequency);
+                endPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
+                    endFrequency,
+                    currentDisplacement,
+                    tripartiteUnit
+                );
+            }
+
+            // Create diagonal line from min frequency to max frequency
+            var startPoint = new LvcPoint(startFrequency, startPseudoVelocity);
+            var endPoint = new LvcPoint(endFrequency, endPseudoVelocity);
+
+            diagonalLines.Add(
+                new DiagonalLine(
+                    startPoint,
+                    endPoint,
+                    $"{TripartiteHelpers.FormatNumber(currentDisplacement)} {tripartiteUnit.DisplacementUnit}"
+                )
+            );
+        }
+
+        // filter out lines where both points are the same
+        return diagonalLines.Where(line => line.Start != line.End).ToList();
+    }
+
+    /// <summary>
+    /// Function to generate acceleration lines
+    /// </summary>
+    /// <param name="minFrequency"></param>
+    /// <param name="maxFrequency"></param>
+    /// <param name="minPseudoVelocity"></param>
+    /// <param name="maxPseudoVelocity"></param>
+    /// <param name="numberOfLines"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static List<DiagonalLine> GenerateDisplacementReciprocalLines(
+        double minFrequency,
+        double maxFrequency,
+        double minPseudoVelocity,
+        double maxPseudoVelocity,
+        int numberOfLines,
+        TripartiteUnit tripartiteUnit
+    )
+    {
+        // initialize return array
+        var diagonalLines = new List<DiagonalLine>();
+
+        // Ensure valid input
+        if (
+            numberOfLines <= 0
+            || minFrequency >= maxFrequency
+            || minPseudoVelocity >= maxPseudoVelocity
+        )
+        {
+            throw new ArgumentException("Invalid bounds or number of lines.");
+        }
+
+        // a = -2 * pi * f * v
+        // step corresponds to the "slices" in between lines
+        var minDisplacement = TripartiteHelpers.GetDisplacement(
+            minFrequency,
+            minPseudoVelocity,
+            tripartiteUnit
+        );
+        var maxDisplacement = TripartiteHelpers.GetDisplacement(
+            maxFrequency,
+            maxPseudoVelocity,
+            tripartiteUnit
+        );
+
+        var displacementStep =
+            (Math.Log10(maxDisplacement) - Math.Log10(minDisplacement)) / (numberOfLines + 1);
+
+        double currentDisplacement,
+            startFrequency,
+            startPseudoVelocity,
+            endPseudoVelocity,
+            endFrequency;
+
+        // finally, generate lines
+        for (var i = 0; i < numberOfLines + 2; i++)
+        {
+            currentDisplacement = Math.Pow(10, Math.Log10(minDisplacement) + i * displacementStep);
+
+            // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
+            startFrequency = minFrequency;
+            startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
+                startFrequency,
+                currentDisplacement,
+                tripartiteUnit
+            );
+
+            // to prevent clipping on top of chart, if our acceleration is above the maximum
+            if (startPseudoVelocity > maxPseudoVelocity)
+            {
+                startPseudoVelocity = maxPseudoVelocity;
+                startFrequency = TripartiteHelpers.GetFrequencyFromDisplacement(
+                    startPseudoVelocity,
+                    currentDisplacement,
+                    tripartiteUnit
+                );
+            }
+
+            endPseudoVelocity = minPseudoVelocity;
+            endFrequency = TripartiteHelpers.GetFrequencyFromDisplacement(
+                endPseudoVelocity,
+                currentDisplacement,
+                tripartiteUnit
+            );
+
+            // to prevent clipping on top of chart, if our frequency is above the maximum
+            if (endFrequency > maxFrequency)
+            {
+                endFrequency = maxFrequency;
+                endPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
+                    endFrequency,
+                    currentDisplacement,
+                    tripartiteUnit
+                );
             }
 
             // Create diagonal line from min frequency to max frequency
@@ -401,10 +547,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
         // a = -2 * pi * f * v
         // step corresponds to the "slices" in between lines
-        var minAcceleration =
-            minPseudoVelocity * (2 * Math.PI * minFrequency) / tripartiteUnit.AccelerationScale;
-        var maxAcceleration =
-            maxPseudoVelocity * (2 * Math.PI * maxFrequency) / tripartiteUnit.AccelerationScale;
+        var minAcceleration = TripartiteHelpers.GetAcceleration(
+            minFrequency,
+            minPseudoVelocity,
+            tripartiteUnit
+        );
+        var maxAcceleration = TripartiteHelpers.GetAcceleration(
+            maxFrequency,
+            maxPseudoVelocity,
+            tripartiteUnit
+        );
 
         var accelerationStep =
             (Math.Log10(maxAcceleration) - Math.Log10(minAcceleration)) / (numberOfLines + 1);
@@ -422,35 +574,152 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
-            startPseudoVelocity =
-                currentAcceleration
-                * tripartiteUnit.AccelerationScale
-                / (2 * Math.PI * startFrequency);
+            startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
+                startFrequency,
+                currentAcceleration,
+                tripartiteUnit
+            );
 
             // to prevent clipping on top of chart, if our acceleration is above the maximum
             if (startPseudoVelocity > maxPseudoVelocity)
             {
                 startPseudoVelocity = maxPseudoVelocity;
-                startFrequency =
-                    currentAcceleration
-                    * tripartiteUnit.AccelerationScale
-                    / (2 * Math.PI * startPseudoVelocity);
+                startFrequency = TripartiteHelpers.GetFrequencyFromAcceleration(
+                    startPseudoVelocity,
+                    currentAcceleration,
+                    tripartiteUnit
+                );
             }
 
             endPseudoVelocity = minPseudoVelocity;
-            endFrequency =
-                currentAcceleration
-                * tripartiteUnit.AccelerationScale
-                / (2 * Math.PI * endPseudoVelocity);
+            endFrequency = TripartiteHelpers.GetFrequencyFromAcceleration(
+                endPseudoVelocity,
+                currentAcceleration,
+                tripartiteUnit
+            );
 
             // to prevent clipping on top of chart, if our frequency is above the maximum
             if (endFrequency > maxFrequency)
             {
                 endFrequency = maxFrequency;
-                endPseudoVelocity =
-                    currentAcceleration
-                    * tripartiteUnit.AccelerationScale
-                    / (2 * Math.PI * endFrequency);
+                endPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
+                    endFrequency,
+                    currentAcceleration,
+                    tripartiteUnit
+                );
+            }
+
+            // Create diagonal line from min frequency to max frequency
+            var startPoint = new LvcPoint(startFrequency, startPseudoVelocity);
+            var endPoint = new LvcPoint(endFrequency, endPseudoVelocity);
+
+            diagonalLines.Add(
+                new DiagonalLine(
+                    startPoint,
+                    endPoint,
+                    $"{TripartiteHelpers.FormatNumber(currentAcceleration)} {tripartiteUnit.AccelerationUnit}"
+                )
+            );
+        }
+
+        // filter out lines where both points are the same
+        return diagonalLines.Where(line => line.Start != line.End).ToList();
+    }
+
+    // <summary>
+    /// Function to generate acceleration when frequency is in seconds
+    /// </summary>
+    /// <param name="minFrequency"></param>
+    /// <param name="maxFrequency"></param>
+    /// <param name="minPseudoVelocity"></param>
+    /// <param name="maxPseudoVelocity"></param>
+    /// <param name="numberOfLines"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static List<DiagonalLine> GenerateAccelerationReciprocalLines(
+        double minFrequency,
+        double maxFrequency,
+        double minPseudoVelocity,
+        double maxPseudoVelocity,
+        int numberOfLines,
+        TripartiteUnit tripartiteUnit
+    )
+    {
+        // initialize return array
+        var diagonalLines = new List<DiagonalLine>();
+
+        // Ensure valid input
+        if (
+            numberOfLines <= 0
+            || minFrequency >= maxFrequency
+            || minPseudoVelocity >= maxPseudoVelocity
+        )
+        {
+            throw new ArgumentException("Invalid bounds or number of lines.");
+        }
+
+        // d = v / (2 * pi * f).
+        // step corresponds to the "slices" in between lines
+        var minAcceleration = TripartiteHelpers.GetAcceleration(
+            maxFrequency,
+            minPseudoVelocity,
+            tripartiteUnit
+        );
+        var maxAcceleration = TripartiteHelpers.GetAcceleration(
+            minFrequency,
+            maxPseudoVelocity,
+            tripartiteUnit
+        );
+
+        var accelerationStep =
+            (Math.Log10(maxAcceleration) - Math.Log10(minAcceleration)) / (numberOfLines + 1);
+
+        double currentAcceleration,
+            startFrequency,
+            startPseudoVelocity,
+            endPseudoVelocity,
+            endFrequency;
+
+        // finally, generate lines
+        for (var i = 0; i < numberOfLines + 2; i++)
+        {
+            currentAcceleration = Math.Pow(10, Math.Log10(minAcceleration) + i * accelerationStep);
+
+            // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
+            startFrequency = minFrequency;
+            startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
+                startFrequency,
+                currentAcceleration,
+                tripartiteUnit
+            );
+
+            // to prevent clipping on bottom of chart, if our acceleration is below the minimum
+            if (startPseudoVelocity < minPseudoVelocity)
+            {
+                startPseudoVelocity = minPseudoVelocity;
+                startFrequency = TripartiteHelpers.GetFrequencyFromAcceleration(
+                    startPseudoVelocity,
+                    currentAcceleration,
+                    tripartiteUnit
+                );
+            }
+
+            endPseudoVelocity = maxPseudoVelocity;
+            endFrequency = TripartiteHelpers.GetFrequencyFromAcceleration(
+                endPseudoVelocity,
+                currentAcceleration,
+                tripartiteUnit
+            );
+
+            // to prevent clipping on top of chart, if our frequency is above the maximum
+            if (endFrequency > maxFrequency)
+            {
+                endFrequency = maxFrequency;
+                endPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
+                    endFrequency,
+                    currentAcceleration,
+                    tripartiteUnit
+                );
             }
 
             // Create diagonal line from min frequency to max frequency
