@@ -43,5 +43,5 @@ public interface ITripartiteChartView<TDrawingContext, TLineGeometry, TTextGeome
     /// <value>
     /// The diagonal separators.
     /// </value>
-    TripartiteUnitOption TripartiteUnits { get; set; }
+    TripartiteUnit TripartiteUnits { get; set; }
 }

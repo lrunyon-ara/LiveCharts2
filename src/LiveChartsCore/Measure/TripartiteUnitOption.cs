@@ -27,7 +27,6 @@ namespace LiveChartsCore.Measure;
 /// </summary>
 public enum TripartiteUnitOption
 {
-    // TODO:comment
     A,
     B,
     C,
@@ -38,5 +37,4 @@ public enum TripartiteUnitOption
     H,
     I,
     J,
-    //UserDefined
 }

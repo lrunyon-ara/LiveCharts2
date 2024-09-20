@@ -238,9 +238,7 @@ public class SKTripartiteTooltip : IChartTooltip<SkiaSharpDrawingContext>
                     var y = double.Parse(
                         tripartiteChart.YAxes[0].Labeler(point.Coordinate.PrimaryValue)
                     );
-                    var tripartiteUnits = TripartiteUnitProvider.GetUnits(
-                        tripartiteChart.TripartiteUnits
-                    );
+                    var tripartiteUnits = tripartiteChart.TripartiteUnits;
 
                     var test = TripartiteHelpers.GetDisplacement(x, y, tripartiteUnits);
                     var test2 = TripartiteHelpers.GetAcceleration(x, y, tripartiteUnits);

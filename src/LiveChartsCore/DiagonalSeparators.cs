@@ -136,6 +136,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         if (DiagonalSeparatorsPaint is null)
             return;
 
+        // TODO: make this user facing
+        var DiagonalSubseperatorsPaint = DiagonalSeparatorsPaint;
+
         // chart bounds
         var drawMarginLocation = chart.DrawMarginLocation;
         var drawMarginSize = chart.DrawMarginSize;
@@ -144,7 +147,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         var xAxis = tripartiteChart.XAxes[0];
         var yAxis = tripartiteChart.YAxes[0];
 
-        var tripartiteUnits = TripartiteUnitProvider.GetUnits(tripartiteChart.TripartiteUnits);
+        var tripartiteUnits = tripartiteChart.TripartiteUnits;
 
         // if neither axis is visible then we don't draw our diagonal lines
         if (!xAxis.IsVisible || !yAxis.IsVisible)
@@ -220,6 +223,10 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             y,
             x1,
             y1;
+        float? lastX = null,
+            lastY = null,
+            lastX1 = null,
+            lastY1 = null;
         var index = 0;
 
         foreach (var item in lines)
@@ -247,6 +254,33 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
             tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
             _lineGeometry.CompleteTransition(null);
+
+            //if (DiagonalSeparatorsPaint is not null)
+            //    for (int i = 2; i < 6; i++)
+            //    {
+            //        if (lastX is null || lastY is null || lastX1 is null || lastY1 is null)
+            //            return;
+
+            //        // none of these should every equal 0 because of above
+            //        float sX = (x - lastX) / i + lastX ?? 0;
+            //        float sY = (x - lastY) / i + lastY ?? 0;
+            //        float sX1 = (x - lastX1) / i + lastX1 ?? 0;
+            //        float sY1 = (x - lastY1) / i + lastY1 ?? 0;
+
+            //        _lineGeometry = new TLineGeometry
+            //        {
+            //            X = sX,
+            //            Y = sY,
+            //            X1 = sX1,
+            //            Y1 = sY1,
+            //        };
+            //        DiagonalSubseperatorsPaint.AddGeometryToPaintTask(
+            //            tripartiteChart.Canvas,
+            //            _lineGeometry
+            //        );
+            //        tripartiteChart.Canvas.AddDrawableTask(DiagonalSubseperatorsPaint);
+            //        _lineGeometry.CompleteTransition(null);
+            //    }
 
             var angleDegrees = (float)(
                 Math.Atan(lines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002) * (180 / Math.PI)
@@ -276,6 +310,10 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             }
 
             index++;
+            lastX = x;
+            lastY = y;
+            lastX1 = x1;
+            lastY1 = y1;
         }
 
         if (!_isInitialized)

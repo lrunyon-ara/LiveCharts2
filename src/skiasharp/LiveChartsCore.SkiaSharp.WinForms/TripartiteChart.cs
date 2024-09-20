@@ -40,7 +40,7 @@ public class TripartiteChart
         LineGeometry,
         LabelGeometry
     >? _diagonalSeparators;
-    private TripartiteUnitOption _tripartiteUnits;
+    private TripartiteUnit _tripartiteUnits;
 
     /// <summary>
     /// The tool tip
@@ -201,7 +201,7 @@ public class TripartiteChart
 
     /// <inheritdoc cref="IChartView{TDrawingContext}.TripartiteUnits" />
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public TripartiteUnitOption TripartiteUnits
+    public TripartiteUnit TripartiteUnits
     {
         get => _tripartiteUnits;
         set

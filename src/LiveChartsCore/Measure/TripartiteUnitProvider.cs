@@ -35,36 +35,34 @@ public class TripartiteUnitProvider
         {
             case TripartiteUnitOption.A:
                 //1g=9.81m/s²×39.37inches/meter≈386.1in/sec².
-                return new TripartiteUnit("Hertz", "in/sec", "in.", "g", 1, 386.1);
+                return new TripartiteUnit("in.", "g", 1, 386.1);
             case TripartiteUnitOption.B:
                 //1g=9.81m/s²×3.28084feet/meter≈32.2ft/sec².
-                return new TripartiteUnit("Hertz", "ft/sec", "ft.", "g", 1, 32.2);
+                return new TripartiteUnit("ft.", "g", 1, 32.2);
             case TripartiteUnitOption.C:
                 //1g=9.81m/s²×1000mm/meter=9810mm/sec².
-                return new TripartiteUnit("Hertz", "mm/sec", "mm.", "g", 1, 9810);
+                return new TripartiteUnit("mm.", "g", 1, 9810);
             case TripartiteUnitOption.D:
                 //1g=9.81m/s²×100cm/meter=981cm/sec².
-                return new TripartiteUnit("Hertz", "cm/sec", "cm.", "g", 1, 981);
+                return new TripartiteUnit("cm.", "g", 1, 981);
             case TripartiteUnitOption.E:
                 //1g=9.81m/s²=9.81cm/sec².
-                return new TripartiteUnit("Hertz", "m/sec", "m.", "g", 1, 9.81);
+                return new TripartiteUnit("m.", "g", 1, 9.81);
             case TripartiteUnitOption.F:
                 //TODO:
-                return new TripartiteUnit("Seconds", "in/sec", "in", "g", 1, 386.1, true);
+                return new TripartiteUnit("in", "g", 1, 386.1, true);
             case TripartiteUnitOption.G:
                 //TODO:
-                return new TripartiteUnit("Seconds", "ft/sec", "ft.", "g", 1, 32.2, true);
+                return new TripartiteUnit("ft.", "g", 1, 32.2, true);
             case TripartiteUnitOption.H:
                 //TODO:
-                return new TripartiteUnit("Seconds", "mm/sec", "mm.", "g", 1, 9810, true);
+                return new TripartiteUnit("mm.", "g", 1, 9810, true);
             case TripartiteUnitOption.I:
                 //TODO:
-                return new TripartiteUnit("Seconds", "cm/sec", "cm.", "g", 1, 981, true);
+                return new TripartiteUnit("cm.", "g", 1, 981, true);
             case TripartiteUnitOption.J:
                 //TODO:
-                return new TripartiteUnit("Seconds", "m/sec", "m.", "g", 1, 9.81, true);
-            //case TripartiteUnitOption.UserDefined:
-            //    return new TripartiteUnit("Custom X", "Custom Y", "Custom 45deg", "Custom 135deg");
+                return new TripartiteUnit("m.", "g", 1, 9.81, true);
             default:
                 return GetUnits(TripartiteUnitOption.A);
         }

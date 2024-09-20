@@ -102,7 +102,8 @@ public partial class ViewModel : ObservableObject
             //, DrawIntermediateDiagonalLines = true
         };
 
-    public TripartiteUnitOption TripartiteUnits { get; set; } = TripartiteUnitOption.A;
+    public TripartiteUnit TripartiteUnits { get; set; } =
+        new TripartiteUnit(TripartiteUnitOption.A);
 
     public Axis[] XAxes { get; set; } =
         {

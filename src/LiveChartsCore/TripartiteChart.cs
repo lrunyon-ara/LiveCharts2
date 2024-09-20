@@ -82,7 +82,7 @@ public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
     /// <value>
     ///   <c>true</c> if this instance is zooming or panning; otherwise, <c>false</c>.
     /// </value>
-    public TripartiteUnitOption TripartiteUnits { get; private set; }
+    public TripartiteUnit TripartiteUnits { get; private set; }
 
     /// <summary>
     /// Adds a visual element to the chart.
