@@ -31,17 +31,26 @@ public static class TripartiteHelpers
     public static string FormatNumber(double number)
     {
         string formattedNumber;
-        // Check if the number is less than 0.0001
+
         if (Math.Abs(number) < 0.0001)
         {
-            // Convert to scientific notation
-            formattedNumber = number.ToString("E4"); // "E4" means scientific notation with 4 decimal places
+            // Convert to scientific notation with up to 4 decimal places
+            formattedNumber = number.ToString("E4");
+
+            // remove trailing zeros in the scientific notation part (before the exponent)
+            var exponentIndex = formattedNumber.IndexOf('E');
+            var coefficient = formattedNumber.Substring(0, exponentIndex).TrimEnd('0').TrimEnd('.');
+            var exponent = formattedNumber.Substring(exponentIndex + 1);
+            var exponentValue = int.Parse(exponent);
+
+            formattedNumber = $"{coefficient}E{exponentValue}";
         }
         else
         {
-            // Use the original number as a string
-            formattedNumber = Math.Round(number, 4).ToString();
+            // Round to 4 decimal places and remove trailing zeros after decimal point
+            formattedNumber = Math.Round(number, 4).ToString("0.####");
         }
+
         return formattedNumber;
     }
 

@@ -185,8 +185,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                     maxFrequency,
                     minPseudoVelocity,
                     maxPseudoVelocity,
-                    10,
-                    tripartiteUnits
+                    tripartiteUnits,
+                    xAxis.LogBase ?? 10
                 )
                 .Concat(
                     GenerateDisplacementLines(
@@ -194,8 +194,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                         maxFrequency,
                         minPseudoVelocity,
                         maxPseudoVelocity,
-                        10,
-                        tripartiteUnits
+                        tripartiteUnits,
+                        xAxis.LogBase ?? 10
                     )
                 )
                 .ToList()
@@ -204,8 +204,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                     maxFrequency,
                     minPseudoVelocity,
                     maxPseudoVelocity,
-                    10,
-                    tripartiteUnits
+                    tripartiteUnits,
+                    xAxis.LogBase ?? 10
                 )
                 .Concat(
                     GenerateDisplacementReciprocalLines(
@@ -213,8 +213,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                         maxFrequency,
                         minPseudoVelocity,
                         maxPseudoVelocity,
-                        10,
-                        tripartiteUnits
+                        tripartiteUnits,
+                        xAxis.LogBase ?? 10
                     )
                 )
                 .ToList();
@@ -282,9 +282,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             //        _lineGeometry.CompleteTransition(null);
             //    }
 
-            var angleDegrees = (float)(
-                Math.Atan(lines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002) * (180 / Math.PI)
-            );
+            var lx = (x1 - x) / 2 + x;
+            var ly = (y1 - y) / 2 + y;
+            var padding = 20;
 
             if (
                 LabelsPaint is not null
@@ -293,15 +293,22 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 && index != Math.Floor((lines.Count - 1) * .25)
                 && index != Math.Ceiling((lines.Count - 1) * .75)
                 && index != Math.Floor((lines.Count - 1) * .75)
+                // ensure that our outside lines don't clip
+                && lx > drawMarginLocation.X + padding
+                && ly > drawMarginLocation.Y + padding
+                && lx < (drawMarginLocation.X + drawMarginSize.Width - padding)
+                && ly < (drawMarginLocation.Y + drawMarginSize.Height - padding)
             )
             {
                 _textGeometry = new TTextGeometry
                 {
                     Text = item.Label,
                     TextSize = 16,
-                    X = (x1 - x) / 2 + x,
-                    Y = (y1 - y) / 2 + y,
-                    RotateTransform = angleDegrees,
+                    X = lx,
+                    Y = ly,
+                    RotateTransform = (float)(
+                        Math.Atan(lines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002) * (180 / Math.PI)
+                    ),
                 };
 
                 LabelsPaint.AddGeometryToPaintTask(chart.Canvas, _textGeometry);
@@ -340,8 +347,8 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double maxFrequency,
         double minPseudoVelocity,
         double maxPseudoVelocity,
-        int numberOfLines,
-        TripartiteUnit tripartiteUnit
+        TripartiteUnit tripartiteUnit,
+        double logBase = 10
     )
     {
         // initialize return array
@@ -349,13 +356,15 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
         // Ensure valid input
         if (
-            numberOfLines <= 0
-            || minFrequency >= maxFrequency
+            //numberOfLines <= 0 ||
+            minFrequency >= maxFrequency
             || minPseudoVelocity >= maxPseudoVelocity
         )
         {
             throw new ArgumentException("Invalid bounds or number of lines.");
         }
+
+        var numberOfLines = 10;
 
         // d = v / (2 * pi * f).
         // step corresponds to the "slices" in between lines
@@ -370,21 +379,20 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             tripartiteUnit
         );
 
-        var displacementStep =
-            (Math.Log10(maxDisplacement) - Math.Log10(minDisplacement)) / (numberOfLines + 1);
-
-        double currentDisplacement,
-            startFrequency,
+        double startFrequency,
             startPseudoVelocity,
             endPseudoVelocity,
             endFrequency;
 
         // finally, generate lines
-        for (var i = 0; i < numberOfLines + 2; i++)
+        foreach (
+            var currentDisplacement in GetLogarithmicAndHalfSteps(
+                logBase,
+                minDisplacement,
+                maxDisplacement
+            )
+        )
         {
-            currentDisplacement = Math.Pow(10, Math.Log10(minDisplacement) + i * displacementStep);
-
-            // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
                 startFrequency,
@@ -453,19 +461,15 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double maxFrequency,
         double minPseudoVelocity,
         double maxPseudoVelocity,
-        int numberOfLines,
-        TripartiteUnit tripartiteUnit
+        TripartiteUnit tripartiteUnit,
+        double logBase = 10
     )
     {
         // initialize return array
         var diagonalLines = new List<DiagonalLine>();
 
         // Ensure valid input
-        if (
-            numberOfLines <= 0
-            || minFrequency >= maxFrequency
-            || minPseudoVelocity >= maxPseudoVelocity
-        )
+        if (minFrequency >= maxFrequency || minPseudoVelocity >= maxPseudoVelocity)
         {
             throw new ArgumentException("Invalid bounds or number of lines.");
         }
@@ -483,20 +487,20 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             tripartiteUnit
         );
 
-        var displacementStep =
-            (Math.Log10(maxDisplacement) - Math.Log10(minDisplacement)) / (numberOfLines + 1);
-
-        double currentDisplacement,
-            startFrequency,
+        double startFrequency,
             startPseudoVelocity,
             endPseudoVelocity,
             endFrequency;
 
         // finally, generate lines
-        for (var i = 0; i < numberOfLines + 2; i++)
+        foreach (
+            var currentDisplacement in GetLogarithmicAndHalfSteps(
+                logBase,
+                minDisplacement,
+                maxDisplacement
+            )
+        )
         {
-            currentDisplacement = Math.Pow(10, Math.Log10(minDisplacement) + i * displacementStep);
-
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
@@ -566,19 +570,15 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double maxFrequency,
         double minPseudoVelocity,
         double maxPseudoVelocity,
-        int numberOfLines,
-        TripartiteUnit tripartiteUnit
+        TripartiteUnit tripartiteUnit,
+        double logBase = 10
     )
     {
         // initialize return array
         var diagonalLines = new List<DiagonalLine>();
 
         // Ensure valid input
-        if (
-            numberOfLines <= 0
-            || minFrequency >= maxFrequency
-            || minPseudoVelocity >= maxPseudoVelocity
-        )
+        if (minFrequency >= maxFrequency || minPseudoVelocity >= maxPseudoVelocity)
         {
             throw new ArgumentException("Invalid bounds or number of lines.");
         }
@@ -596,20 +596,20 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             tripartiteUnit
         );
 
-        var accelerationStep =
-            (Math.Log10(maxAcceleration) - Math.Log10(minAcceleration)) / (numberOfLines + 1);
-
-        double currentAcceleration,
-            startFrequency,
+        double startFrequency,
             startPseudoVelocity,
             endPseudoVelocity,
             endFrequency;
 
         // finally, generate lines
-        for (var i = 0; i < numberOfLines + 2; i++)
+        foreach (
+            var currentAcceleration in GetLogarithmicAndHalfSteps(
+                logBase,
+                minAcceleration,
+                maxAcceleration
+            )
+        )
         {
-            currentAcceleration = Math.Pow(10, Math.Log10(minAcceleration) + i * accelerationStep);
-
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
@@ -679,19 +679,15 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double maxFrequency,
         double minPseudoVelocity,
         double maxPseudoVelocity,
-        int numberOfLines,
-        TripartiteUnit tripartiteUnit
+        TripartiteUnit tripartiteUnit,
+        double logBase = 10
     )
     {
         // initialize return array
         var diagonalLines = new List<DiagonalLine>();
 
         // Ensure valid input
-        if (
-            numberOfLines <= 0
-            || minFrequency >= maxFrequency
-            || minPseudoVelocity >= maxPseudoVelocity
-        )
+        if (minFrequency >= maxFrequency || minPseudoVelocity >= maxPseudoVelocity)
         {
             throw new ArgumentException("Invalid bounds or number of lines.");
         }
@@ -709,20 +705,20 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             tripartiteUnit
         );
 
-        var accelerationStep =
-            (Math.Log10(maxAcceleration) - Math.Log10(minAcceleration)) / (numberOfLines + 1);
-
-        double currentAcceleration,
-            startFrequency,
+        double startFrequency,
             startPseudoVelocity,
             endPseudoVelocity,
             endFrequency;
 
         // finally, generate lines
-        for (var i = 0; i < numberOfLines + 2; i++)
+        foreach (
+            var currentAcceleration in GetLogarithmicAndHalfSteps(
+                logBase,
+                minAcceleration,
+                maxAcceleration
+            )
+        )
         {
-            currentAcceleration = Math.Pow(10, Math.Log10(minAcceleration) + i * accelerationStep);
-
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
@@ -775,6 +771,88 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
         // filter out lines where both points are the same
         return diagonalLines.Where(line => line.Start != line.End).ToList();
+    }
+
+    // takes a min and max number and finds all the full log steps
+    public static List<double> GetLogarithmicSteps(double logBase, double start, double end)
+    {
+        List<double> logarithmicSteps = new List<double>();
+
+        if (logBase <= 1 || start <= 0 || end <= 0 || start >= end)
+        {
+            throw new ArgumentException("Invalid base or range");
+        }
+
+        // Add the start value to the list
+        //logarithmicSteps.Add(start);
+
+        // Calculate the logarithmic values of start and end based on the provided base
+        double logStart = Math.Log(start, logBase);
+        double logEnd = Math.Log(end, logBase);
+
+        // Round the logarithmic values to find powers of the base between start and end
+        int firstPower = (int)Math.Ceiling(logStart);
+        int lastPower = (int)Math.Floor(logEnd);
+
+        // Generate values using powers of the logBase between the start and end values
+        for (int i = firstPower; i <= lastPower; i++)
+        {
+            logarithmicSteps.Add(Math.Pow(logBase, i));
+        }
+
+        // Add the end value to the list
+        //logarithmicSteps.Add(end);
+
+        return logarithmicSteps;
+    }
+
+    // takes a min and max number and finds all the half log steps
+    public static List<double> GetLogarithmicAndHalfSteps(double logBase, double start, double end)
+    {
+        List<double> steps = new List<double>();
+
+        if (logBase <= 1 || start <= 0 || end <= 0 || start >= end)
+        {
+            throw new ArgumentException("Invalid base or range");
+        }
+
+        // Add the start value to the list
+        steps.Add(start);
+
+        // Calculate the logarithmic values of start and end based on the provided base
+        double logStart = Math.Log(start, logBase);
+        double logEnd = Math.Log(end, logBase);
+
+        // Round the logarithmic values to find powers of the base between start and end
+        int firstPower = (int)Math.Ceiling(logStart);
+        int lastPower = (int)Math.Floor(logEnd);
+
+        // Generate values using powers of the logBase
+        for (int i = firstPower; i <= lastPower; i++)
+        {
+            double fullStep = Math.Pow(logBase, i);
+
+            // Only add the power of the base if it's between start and end
+            if (fullStep > start && fullStep < end)
+            {
+                steps.Add(fullStep);
+
+                // Add the half step (e.g., 0.5 * current step) if it's in range
+                double halfStep = fullStep * 0.5;
+                if (halfStep > start && halfStep < end)
+                {
+                    steps.Add(halfStep);
+                }
+            }
+        }
+
+        // Add the end value to the list
+        steps.Add(end);
+
+        // Sort the steps before returning to ensure correct order
+        steps.Sort();
+
+        return steps;
     }
     #endregion
 }
