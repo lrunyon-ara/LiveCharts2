@@ -121,11 +121,24 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
     /// </summary>
     public class DiagonalLine
     {
+        /// <summary>
+        /// The start point of the line
+        /// </summary>
         public LvcPoint Start { get; set; }
+
+        /// <summary>
+        /// The end point of the line
+        /// </summary>
         public LvcPoint End { get; set; }
 
+        /// <summary>
+        /// The label of the line, if any
+        /// </summary>
         public string? Label { get; set; }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public DiagonalLine(LvcPoint start, LvcPoint end, string? displacement = null)
         {
             Start = start;
@@ -347,7 +360,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
     /// <param name="maxFrequency"></param>
     /// <param name="minPseudoVelocity"></param>
     /// <param name="maxPseudoVelocity"></param>
-    /// <param name="numberOfLines"></param>
+    /// <param name="tripartiteUnit"></param>
+    /// <param name="hasSubseparators"></param>
+    /// <param name="logBase"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public static List<DiagonalLine> GenerateDisplacementLines(
@@ -372,8 +387,6 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         {
             throw new ArgumentException("Invalid bounds or number of lines.");
         }
-
-        var numberOfLines = 10;
 
         // d = v / (2 * pi * f).
         // step corresponds to the "slices" in between lines
@@ -466,7 +479,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
     /// <param name="maxFrequency"></param>
     /// <param name="minPseudoVelocity"></param>
     /// <param name="maxPseudoVelocity"></param>
-    /// <param name="numberOfLines"></param>
+    /// <param name="tripartiteUnit"></param>
+    /// <param name="hasSubseparators"></param>
+    /// <param name="logBase"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public static List<DiagonalLine> GenerateDisplacementReciprocalLines(
@@ -579,7 +594,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
     /// <param name="maxFrequency"></param>
     /// <param name="minPseudoVelocity"></param>
     /// <param name="maxPseudoVelocity"></param>
-    /// <param name="numberOfLines"></param>
+    /// <param name="tripartiteUnit"></param>
+    /// <param name="hasSubseparators"></param>
+    /// <param name="logBase"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public static List<DiagonalLine> GenerateAccelerationLines(
@@ -686,14 +703,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         return diagonalLines.Where(line => line.Start != line.End).ToList();
     }
 
-    // <summary>
+    /// <summary>
     /// Function to generate acceleration when frequency is in seconds
     /// </summary>
     /// <param name="minFrequency"></param>
     /// <param name="maxFrequency"></param>
     /// <param name="minPseudoVelocity"></param>
     /// <param name="maxPseudoVelocity"></param>
-    /// <param name="numberOfLines"></param>
+    /// <param name="tripartiteUnit"></param>
+    /// <param name="hasSubseparators"></param>
+    /// <param name="logBase"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public static List<DiagonalLine> GenerateAccelerationReciprocalLines(
@@ -819,7 +838,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         bool hasSubseparators
     )
     {
-        List<LogStep> steps = new List<LogStep>();
+        var steps = new List<LogStep>();
 
         if (logBase <= 1 || start <= 0 || end <= 0 || start >= end)
         {
@@ -838,16 +857,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         var lastPower = (int)Math.Floor(logEnd);
 
         // Adding extra steps at the beginning (more frequent steps for lower values)
-        double stepFactor = 1.0 / extraStepsAtStart; // Controls extra step density
+        var stepFactor = 1.0 / extraStepsAtStart; // Controls extra step density
 
         for (var i = firstPower; i <= lastPower; i++)
         {
             var fullStep = Math.Pow(logBase, i);
 
             // Add multiple small steps below the first full step
-            for (int j = 1; j <= extraStepsAtStart; j++)
+            for (var j = 1; j <= extraStepsAtStart; j++)
             {
-                double extraStep = fullStep * (j * stepFactor);
+                var extraStep = fullStep * (j * stepFactor);
 
                 if (extraStep > start && extraStep < fullStep && extraStep < end)
                 {
