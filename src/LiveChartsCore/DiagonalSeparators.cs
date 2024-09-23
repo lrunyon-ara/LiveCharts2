@@ -41,6 +41,7 @@ public abstract class DiagonalSeparators<TDrawingContext>
     where TDrawingContext : DrawingContext
 {
     private IPaint<TDrawingContext>? _diagonalSeparatorsPaint = null;
+    private IPaint<TDrawingContext>? _diagonalSubseparatorsPaint = null;
     private IPaint<TDrawingContext>? _labelsPaint = null;
 
     /// <summary>
@@ -53,6 +54,18 @@ public abstract class DiagonalSeparators<TDrawingContext>
     {
         get => _diagonalSeparatorsPaint;
         set => SetPaintProperty(ref _diagonalSeparatorsPaint, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the diagonal subseparators paint.
+    /// </summary>
+    /// <value>
+    /// The diagonal subseparators paint.
+    /// </value>
+    public IPaint<TDrawingContext>? DiagonalSubseparatorsPaint
+    {
+        get => _diagonalSubseparatorsPaint;
+        set => SetPaintProperty(ref _diagonalSubseparatorsPaint, value);
     }
 
     /// <summary>
@@ -73,7 +86,7 @@ public abstract class DiagonalSeparators<TDrawingContext>
     /// <returns></returns>
     internal override IPaint<TDrawingContext>?[] GetPaintTasks()
     {
-        return new[] { _diagonalSeparatorsPaint, _labelsPaint };
+        return new[] { _diagonalSeparatorsPaint, _diagonalSubseparatorsPaint, _labelsPaint };
     }
 
     /// <summary>
@@ -111,9 +124,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         public LvcPoint Start { get; set; }
         public LvcPoint End { get; set; }
 
-        public string Label { get; set; }
+        public string? Label { get; set; }
 
-        public DiagonalLine(LvcPoint start, LvcPoint end, string displacement)
+        public DiagonalLine(LvcPoint start, LvcPoint end, string? displacement = null)
         {
             Start = start;
             End = end;
@@ -135,9 +148,6 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
 
         if (DiagonalSeparatorsPaint is null)
             return;
-
-        // TODO: make this user facing
-        var DiagonalSubseperatorsPaint = DiagonalSeparatorsPaint;
 
         // chart bounds
         var drawMarginLocation = chart.DrawMarginLocation;
@@ -186,6 +196,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                     minPseudoVelocity,
                     maxPseudoVelocity,
                     tripartiteUnits,
+                    DiagonalSubseparatorsPaint is not null,
                     xAxis.LogBase ?? 10
                 )
                 .Concat(
@@ -195,6 +206,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                         minPseudoVelocity,
                         maxPseudoVelocity,
                         tripartiteUnits,
+                        DiagonalSubseparatorsPaint is not null,
                         xAxis.LogBase ?? 10
                     )
                 )
@@ -205,6 +217,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                     minPseudoVelocity,
                     maxPseudoVelocity,
                     tripartiteUnits,
+                    DiagonalSubseparatorsPaint is not null,
                     xAxis.LogBase ?? 10
                 )
                 .Concat(
@@ -214,6 +227,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                         minPseudoVelocity,
                         maxPseudoVelocity,
                         tripartiteUnits,
+                        DiagonalSubseparatorsPaint is not null,
                         xAxis.LogBase ?? 10
                     )
                 )
@@ -223,10 +237,6 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             y,
             x1,
             y1;
-        float? lastX = null,
-            lastY = null,
-            lastX1 = null,
-            lastY1 = null;
         var index = 0;
 
         foreach (var item in lines)
@@ -244,83 +254,81 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 ? (float)yScaler.ToPixels(Math.Log(item.End.Y, yAxis.LogBase ?? 10))
                 : yScaler.ToPixels(item.End.Y);
 
-            _lineGeometry = new TLineGeometry
+            if (item.Label is null)
             {
-                X = x,
-                Y = y,
-                X1 = x1,
-                Y1 = y1,
-            };
-            DiagonalSeparatorsPaint.AddGeometryToPaintTask(tripartiteChart.Canvas, _lineGeometry);
-            tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
-            _lineGeometry.CompleteTransition(null);
+                if (DiagonalSubseparatorsPaint is null)
+                    continue;
 
-            //if (DiagonalSeparatorsPaint is not null)
-            //    for (int i = 2; i < 6; i++)
-            //    {
-            //        if (lastX is null || lastY is null || lastX1 is null || lastY1 is null)
-            //            return;
-
-            //        // none of these should every equal 0 because of above
-            //        float sX = (x - lastX) / i + lastX ?? 0;
-            //        float sY = (x - lastY) / i + lastY ?? 0;
-            //        float sX1 = (x - lastX1) / i + lastX1 ?? 0;
-            //        float sY1 = (x - lastY1) / i + lastY1 ?? 0;
-
-            //        _lineGeometry = new TLineGeometry
-            //        {
-            //            X = sX,
-            //            Y = sY,
-            //            X1 = sX1,
-            //            Y1 = sY1,
-            //        };
-            //        DiagonalSubseperatorsPaint.AddGeometryToPaintTask(
-            //            tripartiteChart.Canvas,
-            //            _lineGeometry
-            //        );
-            //        tripartiteChart.Canvas.AddDrawableTask(DiagonalSubseperatorsPaint);
-            //        _lineGeometry.CompleteTransition(null);
-            //    }
-
-            var lx = (x1 - x) / 2 + x;
-            var ly = (y1 - y) / 2 + y;
-            var padding = 20;
-
-            if (
-                LabelsPaint is not null
-                // ensure that our middle lines do not have labels
-                && index != Math.Ceiling((lines.Count - 1) * .25)
-                && index != Math.Floor((lines.Count - 1) * .25)
-                && index != Math.Ceiling((lines.Count - 1) * .75)
-                && index != Math.Floor((lines.Count - 1) * .75)
-                // ensure that our outside lines don't clip
-                && lx > drawMarginLocation.X + padding
-                && ly > drawMarginLocation.Y + padding
-                && lx < (drawMarginLocation.X + drawMarginSize.Width - padding)
-                && ly < (drawMarginLocation.Y + drawMarginSize.Height - padding)
-            )
-            {
-                _textGeometry = new TTextGeometry
+                _lineGeometry = new TLineGeometry
                 {
-                    Text = item.Label,
-                    TextSize = 16,
-                    X = lx,
-                    Y = ly,
-                    RotateTransform = (float)(
-                        Math.Atan(lines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002) * (180 / Math.PI)
-                    ),
+                    X = x,
+                    Y = y,
+                    X1 = x1,
+                    Y1 = y1,
                 };
-
-                LabelsPaint.AddGeometryToPaintTask(chart.Canvas, _textGeometry);
-                chart.Canvas.AddDrawableTask(LabelsPaint);
-                _textGeometry.CompleteTransition(null);
+                DiagonalSubseparatorsPaint.AddGeometryToPaintTask(
+                    tripartiteChart.Canvas,
+                    _lineGeometry
+                );
+                tripartiteChart.Canvas.AddDrawableTask(DiagonalSubseparatorsPaint);
+                _lineGeometry.CompleteTransition(null);
             }
+            else
+            {
+                _lineGeometry = new TLineGeometry
+                {
+                    X = x,
+                    Y = y,
+                    X1 = x1,
+                    Y1 = y1,
+                };
+                DiagonalSeparatorsPaint.AddGeometryToPaintTask(
+                    tripartiteChart.Canvas,
+                    _lineGeometry
+                );
+                tripartiteChart.Canvas.AddDrawableTask(DiagonalSeparatorsPaint);
+                _lineGeometry.CompleteTransition(null);
 
-            index++;
-            lastX = x;
-            lastY = y;
-            lastX1 = x1;
-            lastY1 = y1;
+                var lx = (x1 - x) / 2 + x;
+                var ly = (y1 - y) / 2 + y;
+                var padding = 20;
+
+                var lmx = drawMarginLocation.X + drawMarginSize.Width * .5;
+                var lmy = drawMarginLocation.Y + drawMarginSize.Height * .5;
+
+                var isLabelInBounds =
+                    (lx > lmx + padding || lx < lmx - padding)
+                    && (ly > lmy + padding || ly < lmy - padding)
+                    && lx > drawMarginLocation.X + padding
+                    && ly > drawMarginLocation.Y + padding
+                    && lx < (drawMarginLocation.X + drawMarginSize.Width - padding)
+                    && ly < (drawMarginLocation.Y + drawMarginSize.Height - padding);
+
+                if (
+                    LabelsPaint is not null
+                    // ensure that our middle lines do not have labels
+                    && isLabelInBounds
+                )
+                {
+                    _textGeometry = new TTextGeometry
+                    {
+                        Text = item.Label,
+                        TextSize = 16,
+                        X = lx,
+                        Y = ly,
+                        RotateTransform = (float)(
+                            Math.Atan(lines.Count > 1 ? (y1 - y) / (x1 - x) : 0.7002)
+                            * (180 / Math.PI)
+                        ),
+                    };
+
+                    LabelsPaint.AddGeometryToPaintTask(chart.Canvas, _textGeometry);
+                    chart.Canvas.AddDrawableTask(LabelsPaint);
+                    _textGeometry.CompleteTransition(null);
+                }
+
+                index++;
+            }
         }
 
         if (!_isInitialized)
@@ -348,6 +356,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double minPseudoVelocity,
         double maxPseudoVelocity,
         TripartiteUnit tripartiteUnit,
+        bool hasSubseparators,
         double logBase = 10
     )
     {
@@ -385,14 +394,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             endFrequency;
 
         // finally, generate lines
-        foreach (
-            var currentDisplacement in GetLogarithmicAndHalfSteps(
-                logBase,
-                minDisplacement,
-                maxDisplacement
-            )
-        )
+        var steps = GetCustomLogarithmicStepsWithSelectiveLabels(
+            logBase,
+            minDisplacement,
+            maxDisplacement,
+            hasSubseparators
+        );
+        for (var i = 0; i < steps.Count; i++)
         {
+            var currentDisplacement = steps[i].Value;
+
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
                 startFrequency,
@@ -437,7 +448,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 new DiagonalLine(
                     startPoint,
                     endPoint,
-                    $"{TripartiteHelpers.FormatNumber(currentDisplacement)} {tripartiteUnit.DisplacementUnit}"
+                    steps[i].IsLabeled
+                        ? $"{TripartiteHelpers.FormatNumber(currentDisplacement)} {tripartiteUnit.DisplacementUnit}"
+                        : null
                 )
             );
         }
@@ -462,6 +475,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double minPseudoVelocity,
         double maxPseudoVelocity,
         TripartiteUnit tripartiteUnit,
+        bool hasSubseparators,
         double logBase = 10
     )
     {
@@ -493,14 +507,15 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             endFrequency;
 
         // finally, generate lines
-        foreach (
-            var currentDisplacement in GetLogarithmicAndHalfSteps(
-                logBase,
-                minDisplacement,
-                maxDisplacement
-            )
-        )
+        var steps = GetCustomLogarithmicStepsWithSelectiveLabels(
+            logBase,
+            minDisplacement,
+            maxDisplacement,
+            hasSubseparators
+        );
+        for (var i = 0; i < steps.Count; i++)
         {
+            var currentDisplacement = steps[i].Value;
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromDisplacement(
@@ -546,7 +561,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 new DiagonalLine(
                     startPoint,
                     endPoint,
-                    $"{TripartiteHelpers.FormatNumber(currentDisplacement)} {tripartiteUnit.DisplacementUnit}"
+                    steps[i].IsLabeled
+                        ? $"{TripartiteHelpers.FormatNumber(currentDisplacement)} {tripartiteUnit.DisplacementUnit}"
+                        : null
                 )
             );
         }
@@ -571,6 +588,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double minPseudoVelocity,
         double maxPseudoVelocity,
         TripartiteUnit tripartiteUnit,
+        bool hasSubseparators,
         double logBase = 10
     )
     {
@@ -602,14 +620,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             endFrequency;
 
         // finally, generate lines
-        foreach (
-            var currentAcceleration in GetLogarithmicAndHalfSteps(
-                logBase,
-                minAcceleration,
-                maxAcceleration
-            )
-        )
+        var steps = GetCustomLogarithmicStepsWithSelectiveLabels(
+            logBase,
+            minAcceleration,
+            maxAcceleration,
+            hasSubseparators
+        );
+        for (var i = 0; i < steps.Count; i++)
         {
+            var currentAcceleration = steps[i].Value;
+
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
@@ -655,7 +675,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 new DiagonalLine(
                     startPoint,
                     endPoint,
-                    $"{TripartiteHelpers.FormatNumber(currentAcceleration)} {tripartiteUnit.AccelerationUnit}"
+                    steps[i].IsLabeled
+                        ? $"{TripartiteHelpers.FormatNumber(currentAcceleration)} {tripartiteUnit.AccelerationUnit}"
+                        : null
                 )
             );
         }
@@ -680,6 +702,7 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         double minPseudoVelocity,
         double maxPseudoVelocity,
         TripartiteUnit tripartiteUnit,
+        bool hasSubseparators,
         double logBase = 10
     )
     {
@@ -710,15 +733,16 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
             endPseudoVelocity,
             endFrequency;
 
-        // finally, generate lines
-        foreach (
-            var currentAcceleration in GetLogarithmicAndHalfSteps(
-                logBase,
-                minAcceleration,
-                maxAcceleration
-            )
-        )
+        var steps = GetCustomLogarithmicStepsWithSelectiveLabels(
+            logBase,
+            minAcceleration,
+            maxAcceleration,
+            hasSubseparators
+        );
+        for (var i = 0; i < steps.Count; i++)
         {
+            var currentAcceleration = steps[i].Value;
+
             // start at the minimum frequency, calculate pseudo-acceleration for a fixed displacement
             startFrequency = minFrequency;
             startPseudoVelocity = TripartiteHelpers.GetPseudoVelocityFromAcceleration(
@@ -764,7 +788,9 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
                 new DiagonalLine(
                     startPoint,
                     endPoint,
-                    $"{TripartiteHelpers.FormatNumber(currentAcceleration)} {tripartiteUnit.AccelerationUnit}"
+                    steps[i].IsLabeled
+                        ? $"{TripartiteHelpers.FormatNumber(currentAcceleration)} {tripartiteUnit.AccelerationUnit}"
+                        : null
                 )
             );
         }
@@ -773,84 +799,78 @@ public abstract class DiagonalSeparators<TDrawingContext, TLineGeometry, TTextGe
         return diagonalLines.Where(line => line.Start != line.End).ToList();
     }
 
-    // takes a min and max number and finds all the full log steps
-    public static List<double> GetLogarithmicSteps(double logBase, double start, double end)
+    private class LogStep
     {
-        List<double> logarithmicSteps = new List<double>();
+        public double Value { get; set; }
+        public bool IsLabeled { get; set; }
 
-        if (logBase <= 1 || start <= 0 || end <= 0 || start >= end)
+        public LogStep(double value, bool isLabeled)
         {
-            throw new ArgumentException("Invalid base or range");
+            Value = value;
+            IsLabeled = isLabeled;
         }
-
-        // Add the start value to the list
-        //logarithmicSteps.Add(start);
-
-        // Calculate the logarithmic values of start and end based on the provided base
-        double logStart = Math.Log(start, logBase);
-        double logEnd = Math.Log(end, logBase);
-
-        // Round the logarithmic values to find powers of the base between start and end
-        int firstPower = (int)Math.Ceiling(logStart);
-        int lastPower = (int)Math.Floor(logEnd);
-
-        // Generate values using powers of the logBase between the start and end values
-        for (int i = firstPower; i <= lastPower; i++)
-        {
-            logarithmicSteps.Add(Math.Pow(logBase, i));
-        }
-
-        // Add the end value to the list
-        //logarithmicSteps.Add(end);
-
-        return logarithmicSteps;
     }
 
-    // takes a min and max number and finds all the half log steps
-    public static List<double> GetLogarithmicAndHalfSteps(double logBase, double start, double end)
+    // takes a min and max number and finds all the log steps
+    private static List<LogStep> GetCustomLogarithmicStepsWithSelectiveLabels(
+        double logBase,
+        double start,
+        double end,
+        bool hasSubseparators
+    )
     {
-        List<double> steps = new List<double>();
+        List<LogStep> steps = new List<LogStep>();
 
         if (logBase <= 1 || start <= 0 || end <= 0 || start >= end)
         {
             throw new ArgumentException("Invalid base or range");
         }
 
-        // Add the start value to the list
-        steps.Add(start);
+        // how many additional lines to draw
+        var extraStepsAtStart = hasSubseparators ? 6 : 0;
 
         // Calculate the logarithmic values of start and end based on the provided base
-        double logStart = Math.Log(start, logBase);
-        double logEnd = Math.Log(end, logBase);
+        var logStart = Math.Log(start, logBase);
+        var logEnd = Math.Log(end, logBase);
 
         // Round the logarithmic values to find powers of the base between start and end
-        int firstPower = (int)Math.Ceiling(logStart);
-        int lastPower = (int)Math.Floor(logEnd);
+        var firstPower = (int)Math.Ceiling(logStart);
+        var lastPower = (int)Math.Floor(logEnd);
 
-        // Generate values using powers of the logBase
-        for (int i = firstPower; i <= lastPower; i++)
+        // Adding extra steps at the beginning (more frequent steps for lower values)
+        double stepFactor = 1.0 / extraStepsAtStart; // Controls extra step density
+
+        for (var i = firstPower; i <= lastPower; i++)
         {
-            double fullStep = Math.Pow(logBase, i);
+            var fullStep = Math.Pow(logBase, i);
 
-            // Only add the power of the base if it's between start and end
+            // Add multiple small steps below the first full step
+            for (int j = 1; j <= extraStepsAtStart; j++)
+            {
+                double extraStep = fullStep * (j * stepFactor);
+
+                if (extraStep > start && extraStep < fullStep && extraStep < end)
+                {
+                    steps.Add(new LogStep(extraStep, false)); // Not labeled for small steps
+                }
+            }
+
+            // Add the full step if it's between start and end
             if (fullStep > start && fullStep < end)
             {
-                steps.Add(fullStep);
+                steps.Add(new LogStep(fullStep, true)); // Labeled for full log steps
+            }
 
-                // Add the half step (e.g., 0.5 * current step) if it's in range
-                double halfStep = fullStep * 0.5;
-                if (halfStep > start && halfStep < end)
-                {
-                    steps.Add(halfStep);
-                }
+            // Add the half step (e.g., 0.5 * current step) if it's in range
+            var halfStep = fullStep * 0.5;
+            if (halfStep > start && halfStep < end)
+            {
+                steps.Add(new LogStep(halfStep, true)); // Half steps are not labeled
             }
         }
 
-        // Add the end value to the list
-        steps.Add(end);
-
         // Sort the steps before returning to ensure correct order
-        steps.Sort();
+        steps.Sort((a, b) => a.Value > b.Value ? 1 : -1);
 
         return steps;
     }

@@ -92,18 +92,20 @@ public partial class ViewModel : ObservableObject
                 ZIndex = -1,
                 StrokeThickness = 1,
             },
+            DiagonalSubseparatorsPaint = new SolidColorPaint()
+            {
+                Color = SKColors.DarkGray,
+                ZIndex = -1,
+                StrokeThickness = 1,
+            },
             LabelsPaint = new SolidColorPaint()
             {
                 Color = SKColors.Black,
                 ZIndex = 5,
                 StrokeThickness = 1,
             }
-            //TODO:
-            //, DrawIntermediateDiagonalLines = true
         };
 
-    //TODO: make nullable
-    // TODO: make spacing log
     public TripartiteUnit TripartiteUnits { get; set; } =
         new TripartiteUnit(TripartiteUnitOption.A);
 
