@@ -59,14 +59,6 @@ public class LineGeometry : Geometry, ILineGeometry<SkiaSharpDrawingContext>
     /// <inheritdoc cref="Geometry.OnDraw(SkiaSharpDrawingContext, SKPaint)" />
     public override void OnDraw(SkiaSharpDrawingContext context, SKPaint paint)
     {
-        // TODO: part 1
-        var p = new SKPaint
-        {
-            Color = SKColors.Red, // Set the paint color
-            StrokeWidth = 2, // Set the stroke width
-            IsAntialias = true, // Enable antialiasing for smoother lines
-            Style = SKPaintStyle.Stroke // Set the paint style to stroke (outline)
-        };
         context.Canvas.DrawLine(X, Y, X1, Y1, paint);
     }
 

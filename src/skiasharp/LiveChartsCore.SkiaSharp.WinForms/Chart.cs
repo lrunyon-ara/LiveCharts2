@@ -95,7 +95,6 @@ public abstract class Chart : UserControl, IChartView<SkiaSharpDrawingContext>
         if (legend is not null)
             this.legend = legend;
 
-        //TODO: part 7
         motionCanvas = new MotionCanvas();
         SuspendLayout();
         motionCanvas.Dock = DockStyle.Fill;

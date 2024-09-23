@@ -243,7 +243,6 @@ public abstract class Geometry : Drawable, IGeometry<SkiaSharpDrawingContext>
             if (hasGeometryOpacity)
                 context.PaintTask.ApplyOpacityMask(context, this);
 
-            // TODO: part 2
             var p = new SKPaint
             {
                 Color = SKColors.Red, // Set the paint color

@@ -33,7 +33,6 @@ public class TripartiteUnit
     public string AccelerationUnit { get; set; }
     public double AccelerationScale { get; set; } = 1.0;
 
-    //TODO: comment
     public TripartiteUnit(
         string displacementUnit,
         string dccelerationUnit,

@@ -215,15 +215,12 @@ public class CartesianChart : Chart, ICartesianChartView<SkiaSharpDrawingContext
     protected override void InitializeCore()
     {
         var zoomingSection = new RectangleGeometry();
-        // TODO: controls the color of the hightlight when you drag zoom on a chart
         var zoomingSectionPaint = new SolidColorPaint
         {
             IsFill = true,
             Color = new SkiaSharp.SKColor(33, 150, 243, 50),
-            //Color = SKColors.Red,
             ZIndex = int.MaxValue
         };
-        // TODO: investigate this after 7
         zoomingSectionPaint.AddGeometryToPaintTask(motionCanvas.CanvasCore, zoomingSection);
         motionCanvas.CanvasCore.AddDrawableTask(zoomingSectionPaint);
 

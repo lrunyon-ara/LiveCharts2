@@ -116,7 +116,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
     /// <param name="xAxisIndex">Index of the x axis.</param>
     /// <param name="yAxisIndex">Index of the y axis.</param>
     /// <returns></returns>
-    /// TODO: tripartite
     public double[] ScaleUIPoint(LvcPoint point, int xAxisIndex = 0, int yAxisIndex = 0)
     {
         var xAxis = XAxes[xAxisIndex];
@@ -420,7 +419,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
         SeriesContext = new SeriesContext<TDrawingContext>(VisibleSeries, this);
         var isNewTheme = LiveCharts.DefaultSettings.CurrentThemeId != ThemeId;
 
-        //TODO: accelertation and displacement axis
         // restart axes bounds and meta data
         foreach (var axis in XAxes)
         {
@@ -440,7 +438,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
         {
             var ce = (ChartElement<TDrawingContext>)axis;
             ce._isInternalSet = true;
-            // TODO: maybe here?
             axis.Initialize(AxisOrientation.Y);
             if (!ce._isThemeSet || isNewTheme)
             {
@@ -1035,7 +1032,6 @@ public class TripartiteChart<TDrawingContext, TLineGeometry, TTextGeometry>
                 _sectionZoomingStart = null;
                 return;
             }
-            // TODO: tripartite
             if ((_zoomMode & ZoomAndPanMode.X) == ZoomAndPanMode.X)
             {
                 for (var i = 0; i < XAxes.Length; i++)

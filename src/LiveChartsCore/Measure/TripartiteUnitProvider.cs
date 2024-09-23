@@ -49,19 +49,14 @@ public class TripartiteUnitProvider
                 //1g=9.81m/s²=9.81cm/sec².
                 return new TripartiteUnit("m.", "g", 1, 9.81);
             case TripartiteUnitOption.F:
-                //TODO:
                 return new TripartiteUnit("in", "g", 1, 386.1, true);
             case TripartiteUnitOption.G:
-                //TODO:
                 return new TripartiteUnit("ft.", "g", 1, 32.2, true);
             case TripartiteUnitOption.H:
-                //TODO:
                 return new TripartiteUnit("mm.", "g", 1, 9810, true);
             case TripartiteUnitOption.I:
-                //TODO:
                 return new TripartiteUnit("cm.", "g", 1, 981, true);
             case TripartiteUnitOption.J:
-                //TODO:
                 return new TripartiteUnit("m.", "g", 1, 9.81, true);
             default:
                 return GetUnits(TripartiteUnitOption.A);

@@ -26,7 +26,6 @@ public partial class View : UserControl
             DrawMarginFrame = viewModel.DrawMarginFrame,
             Location = new System.Drawing.Point(0, 0),
             Size = new System.Drawing.Size(50, 50),
-            // TODO:
             ZoomMode = viewModel.ZoomMode,
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom
         };

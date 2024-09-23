@@ -468,7 +468,6 @@ public class CartesianChart<TDrawingContext> : Chart<TDrawingContext>
         {
             var ce = (ChartElement<TDrawingContext>)axis;
             ce._isInternalSet = true;
-            // TODO: maybe here?
             axis.Initialize(AxisOrientation.Y);
             if (!ce._isThemeSet || isNewTheme)
             {

@@ -47,7 +47,6 @@ public partial class MotionCanvas : UserControl
     /// </summary>
     public MotionCanvas()
     {
-        // TODO: part 6
         InitializeComponent();
     }
 
@@ -109,7 +108,6 @@ public partial class MotionCanvas : UserControl
 
     private void SkControl_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
     {
-        // TODO: part 4
         CanvasCore.DrawFrame(
             new SkiaSharpDrawingContext(CanvasCore, e.Info, e.Surface, e.Surface.Canvas)
         );

@@ -130,7 +130,6 @@ public class MotionCanvas<TDrawingContext> : IDisposable
                     geometry.IsValid = true;
                     geometry.CurrentTime = frameTime;
 
-                    // TODO: part 3
                     if (!task.IsPaused)
                         geometry.Draw(context);
 

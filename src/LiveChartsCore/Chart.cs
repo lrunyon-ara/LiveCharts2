@@ -608,7 +608,6 @@ public abstract class Chart<TDrawingContext> : IChart
     /// <param name="rs">The right margin.</param>
     protected void DrawLegend(ref float ts, ref float bs, ref float ls, ref float rs)
     {
-        // TODO: part 2.1
         if (Legend is null || LegendPosition == LegendPosition.Hidden)
             return;
 
