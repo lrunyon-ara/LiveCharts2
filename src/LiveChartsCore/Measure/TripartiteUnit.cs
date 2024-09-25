@@ -27,7 +27,6 @@ namespace LiveChartsCore.Measure;
 /// </summary>
 public class TripartiteUnit
 {
-    public bool IsXReciprocal { get; set; }
     public string DisplacementUnit { get; set; }
     public double DisplacementScale { get; set; } = 1.0;
     public string AccelerationUnit { get; set; }
@@ -35,17 +34,15 @@ public class TripartiteUnit
 
     public TripartiteUnit(
         string displacementUnit,
-        string dccelerationUnit,
+        string accelerationUnit,
         double displacementScale = 1.0,
-        double accelerationScale = 1.0,
-        bool isXReciprocal = false
+        double accelerationScale = 1.0
     )
     {
         DisplacementUnit = displacementUnit;
-        AccelerationUnit = dccelerationUnit;
+        AccelerationUnit = accelerationUnit;
         DisplacementScale = displacementScale;
         AccelerationScale = accelerationScale;
-        IsXReciprocal = isXReciprocal;
     }
 
     public TripartiteUnit(TripartiteUnitOption option)
@@ -55,6 +52,5 @@ public class TripartiteUnit
         AccelerationUnit = tripartiteUnit.AccelerationUnit;
         DisplacementScale = tripartiteUnit.DisplacementScale;
         AccelerationScale = tripartiteUnit.AccelerationScale;
-        IsXReciprocal = tripartiteUnit.IsXReciprocal;
     }
 }

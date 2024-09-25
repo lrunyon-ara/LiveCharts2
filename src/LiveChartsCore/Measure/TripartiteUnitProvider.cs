@@ -35,29 +35,29 @@ public class TripartiteUnitProvider
         {
             case TripartiteUnitOption.A:
                 //1g=9.81m/s²×39.37inches/meter≈386.1in/sec².
-                return new TripartiteUnit("in.", "g", 1, 386.1);
+                return new TripartiteUnit("in.", "g", 0.1591549, 0.01627397);
             case TripartiteUnitOption.B:
                 //1g=9.81m/s²×3.28084feet/meter≈32.2ft/sec².
-                return new TripartiteUnit("ft.", "g", 1, 32.2);
+                return new TripartiteUnit("ft.", "g", 0.1591549, 0.19528768);
             case TripartiteUnitOption.C:
                 //1g=9.81m/s²×1000mm/meter=9810mm/sec².
-                return new TripartiteUnit("mm.", "g", 1, 9810);
+                return new TripartiteUnit("mm.", "g", 0.1591549, 0.00064071);
             case TripartiteUnitOption.D:
                 //1g=9.81m/s²×100cm/meter=981cm/sec².
-                return new TripartiteUnit("cm.", "g", 1, 981);
+                return new TripartiteUnit("cm.", "g", 0.15915491, 0.00640707);
             case TripartiteUnitOption.E:
                 //1g=9.81m/s²=9.81cm/sec².
-                return new TripartiteUnit("m.", "g", 1, 9.81);
+                return new TripartiteUnit("m.", "g", 0.15915491, 0.64070654);
             case TripartiteUnitOption.F:
-                return new TripartiteUnit("in", "g", 1, 386.1, true);
+                return new TripartiteUnit("in", "g", 0.01627397, 0.1591549);
             case TripartiteUnitOption.G:
-                return new TripartiteUnit("ft.", "g", 1, 32.2, true);
+                return new TripartiteUnit("ft.", "g", 0.19528768, 0.1591549);
             case TripartiteUnitOption.H:
-                return new TripartiteUnit("mm.", "g", 1, 9810, true);
+                return new TripartiteUnit("mm.", "g", 0.00064071, 0.1591549);
             case TripartiteUnitOption.I:
-                return new TripartiteUnit("cm.", "g", 1, 981, true);
+                return new TripartiteUnit("cm.", "g", 0.00064071, 0.1591549);
             case TripartiteUnitOption.J:
-                return new TripartiteUnit("m.", "g", 1, 9.81, true);
+                return new TripartiteUnit("m.", "g", 0.64070654, 0.1591549);
             default:
                 return GetUnits(TripartiteUnitOption.A);
         }
