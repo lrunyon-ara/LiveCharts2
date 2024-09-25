@@ -32,6 +32,8 @@ public class TripartiteUnit
     public string AccelerationUnit { get; set; }
     public double AccelerationScale { get; set; } = 1.0;
 
+    public TripartiteUnitOption? TripartiteUnitOption { get; } = null;
+
     public TripartiteUnit(
         string displacementUnit,
         string accelerationUnit,
@@ -52,5 +54,6 @@ public class TripartiteUnit
         AccelerationUnit = tripartiteUnit.AccelerationUnit;
         DisplacementScale = tripartiteUnit.DisplacementScale;
         AccelerationScale = tripartiteUnit.AccelerationScale;
+        TripartiteUnitOption = option;
     }
 }
