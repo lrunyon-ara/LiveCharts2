@@ -43,10 +43,18 @@ public class LineGeometry : Geometry, ILineGeometry<SkiaSharpDrawingContext>
     }
 
     /// <inheritdoc cref="ILineGeometry{TDrawingContext}.X1" />
-    public float X1 { get => _x1.GetMovement(this); set => _x1.SetMovement(value, this); }
+    public float X1
+    {
+        get => _x1.GetMovement(this);
+        set => _x1.SetMovement(value, this);
+    }
 
     /// <inheritdoc cref="ILineGeometry{TDrawingContext}.Y1" />
-    public float Y1 { get => _y1.GetMovement(this); set => _y1.SetMovement(value, this); }
+    public float Y1
+    {
+        get => _y1.GetMovement(this);
+        set => _y1.SetMovement(value, this);
+    }
 
     /// <inheritdoc cref="Geometry.OnDraw(SkiaSharpDrawingContext, SKPaint)" />
     public override void OnDraw(SkiaSharpDrawingContext context, SKPaint paint)

@@ -54,8 +54,9 @@ public static class Extensions
     public static LvcPoint GetTooltipLocation<TDrawingContext>(
         this IEnumerable<ChartPoint> foundPoints,
         LvcSize tooltipSize,
-        Chart<TDrawingContext> chart)
-            where TDrawingContext : DrawingContext
+        Chart<TDrawingContext> chart
+    )
+        where TDrawingContext : DrawingContext
     {
         var location = chart is CartesianChart<TDrawingContext> or PolarChart<TDrawingContext>
             ? _getCartesianTooltipLocation(foundPoints, chart, tooltipSize)
@@ -63,10 +64,14 @@ public static class Extensions
 
         var controlSize = chart.ControlSize;
 
-        if (location.Y < 0) location.Y = 0;
-        if (location.X < 0) location.X = 0;
-        if (location.Y + tooltipSize.Height > controlSize.Height) location.Y = controlSize.Height - tooltipSize.Height;
-        if (location.X + tooltipSize.Width > controlSize.Width) location.X = controlSize.Width - tooltipSize.Width;
+        if (location.Y < 0)
+            location.Y = 0;
+        if (location.X < 0)
+            location.X = 0;
+        if (location.Y + tooltipSize.Height > controlSize.Height)
+            location.Y = controlSize.Height - tooltipSize.Height;
+        if (location.X + tooltipSize.Width > controlSize.Width)
+            location.X = controlSize.Width - tooltipSize.Width;
 
         return location;
     }
@@ -74,23 +79,30 @@ public static class Extensions
     private static LvcPoint _getCartesianTooltipLocation<TDrawingContext>(
         IEnumerable<ChartPoint> foundPoints,
         Chart<TDrawingContext> chart,
-        LvcSize tooltipSize)
-            where TDrawingContext : DrawingContext
+        LvcSize tooltipSize
+    )
+        where TDrawingContext : DrawingContext
     {
         var count = 0f;
         var placementContext = new TooltipPlacementContext(chart.TooltipPosition);
 
         foreach (var point in foundPoints)
         {
-            if (point.Context.HoverArea is null) continue;
+            if (point.Context.HoverArea is null)
+                continue;
             point.Context.HoverArea.SuggestTooltipPlacement(placementContext, tooltipSize);
             count++;
         }
 
-        if (count == 0) return new();
+        if (count == 0)
+            return new();
 
-        var avrgX = (placementContext.MostRight + placementContext.MostLeft) * 0.5f - tooltipSize.Width * 0.5f;
-        var avrgY = (placementContext.MostTop + placementContext.MostBottom) * 0.5f - tooltipSize.Height * 0.5f;
+        var avrgX =
+            (placementContext.MostRight + placementContext.MostLeft) * 0.5f
+            - tooltipSize.Width * 0.5f;
+        var avrgY =
+            (placementContext.MostTop + placementContext.MostBottom) * 0.5f
+            - tooltipSize.Height * 0.5f;
 
         var position = chart.TooltipPosition;
 
@@ -160,15 +172,20 @@ public static class Extensions
 
         return new(x, y);
     }
+
     private static LvcPoint _getPieTooltipLocation<TDrawingContext>(
-        IEnumerable<ChartPoint> foundPoints, Chart<TDrawingContext> chart, LvcSize tooltipSize)
-            where TDrawingContext : DrawingContext
+        IEnumerable<ChartPoint> foundPoints,
+        Chart<TDrawingContext> chart,
+        LvcSize tooltipSize
+    )
+        where TDrawingContext : DrawingContext
     {
         var placementContext = new TooltipPlacementContext(TooltipPosition.Auto);
 
         foreach (var foundPoint in foundPoints)
         {
-            if (foundPoint.Context.HoverArea is null) continue;
+            if (foundPoint.Context.HoverArea is null)
+                continue;
             foundPoint.Context.HoverArea.SuggestTooltipPlacement(placementContext, tooltipSize);
         }
 
@@ -176,7 +193,8 @@ public static class Extensions
 
         var p = new LvcPoint(
             placementContext.PieX - tooltipSize.Width * 0.5f,
-            placementContext.PieY - tooltipSize.Height);
+            placementContext.PieY - tooltipSize.Height
+        );
 
         if (p.Y < 0)
         {
@@ -184,7 +202,8 @@ public static class Extensions
 
             p = new LvcPoint(
                 placementContext.PieX - tooltipSize.Width * 0.5f,
-                placementContext.PieY);
+                placementContext.PieY
+            );
         }
 
         return p;
@@ -197,7 +216,11 @@ public static class Extensions
     /// <param name="controlSize">Size of the control.</param>
     /// <param name="bounds">The bounds.</param>
     /// <returns></returns>
-    public static AxisTick GetTick(this ICartesianAxis axis, LvcSize controlSize, Bounds? bounds = null)
+    public static AxisTick GetTick(
+        this ICartesianAxis axis,
+        LvcSize controlSize,
+        Bounds? bounds = null
+    )
     {
         bounds ??= axis.VisibleDataBounds;
         var maxLabelSize = axis.PossibleMaxLabelSize;
@@ -220,14 +243,18 @@ public static class Extensions
             // and improve readability.
 
             const float xGrowFactor = 1.10f;
-            if (axis.Orientation == AxisOrientation.X) w *= xGrowFactor;
+            if (axis.Orientation == AxisOrientation.X)
+                w *= xGrowFactor;
 
             const float yGrowFactor = 1.5f;
-            if (axis.Orientation == AxisOrientation.Y) h *= yGrowFactor;
+            if (axis.Orientation == AxisOrientation.Y)
+                h *= yGrowFactor;
         }
 
-        if (w < MinLabelSize) w = MinLabelSize;
-        if (h < MinLabelSize) h = MinLabelSize;
+        if (w < MinLabelSize)
+            w = MinLabelSize;
+        if (h < MinLabelSize)
+            h = MinLabelSize;
 
         var max = axis.MaxLimit is null ? bounds.Max : axis.MaxLimit.Value;
         var min = axis.MinLimit is null ? bounds.Min : axis.MinLimit.Value;
@@ -240,18 +267,27 @@ public static class Extensions
         min /= unit;
 
         var range = max - min;
-        if (range == 0) range = min;
+        if (range == 0)
+            range = min;
 
-        var separations = axis.Orientation == AxisOrientation.Y
-            ? Math.Round(controlSize.Height / h, 0)
-            : Math.Round(controlSize.Width / w, 0);
+        var separations =
+            axis.Orientation == AxisOrientation.Y
+                ? Math.Round(controlSize.Height / h, 0)
+                : Math.Round(controlSize.Width / w, 0);
 
         var minimum = range / separations;
 
         var magnitude = Math.Pow(10, Math.Floor(Math.Log(minimum) / Math.Log(10)));
 
         var residual = minimum / magnitude;
-        var tick = residual > 5 ? 10 * magnitude : residual > 2 ? 5 * magnitude : residual > 1 ? 2 * magnitude : magnitude;
+        var tick =
+            residual > 5
+                ? 10 * magnitude
+                : residual > 2
+                    ? 5 * magnitude
+                    : residual > 1
+                        ? 2 * magnitude
+                        : magnitude;
 
         return new AxisTick { Value = tick * unit, Magnitude = magnitude * unit };
     }
@@ -262,8 +298,12 @@ public static class Extensions
     /// <param name="axis">The axis.</param>
     /// <param name="chart">The chart.</param>
     /// <param name="bounds">The bounds.</param>
-    /// <returns></returns> 
-    public static AxisTick GetTick<TDrawingContext>(this IPolarAxis axis, PolarChart<TDrawingContext> chart, Bounds? bounds = null)
+    /// <returns></returns>
+    public static AxisTick GetTick<TDrawingContext>(
+        this IPolarAxis axis,
+        PolarChart<TDrawingContext> chart,
+        Bounds? bounds = null
+    )
         where TDrawingContext : DrawingContext
     {
         bounds ??= axis.VisibleDataBounds;
@@ -277,15 +317,23 @@ public static class Extensions
         var c = minD * chart.TotalAnge / 360;
 
         var range = max - min;
-        var separations = axis.Orientation == PolarAxisOrientation.Angle
-            ? Math.Round(c / 30, 0)
-            : Math.Round(radius / 90, 0);
+        var separations =
+            axis.Orientation == PolarAxisOrientation.Angle
+                ? Math.Round(c / 30, 0)
+                : Math.Round(radius / 90, 0);
         var minimum = range / separations;
 
         var magnitude = Math.Pow(10, Math.Floor(Math.Log(minimum) / Math.Log(10)));
 
         var residual = minimum / magnitude;
-        var tick = residual > 5 ? 10 * magnitude : residual > 2 ? 5 * magnitude : residual > 1 ? 2 * magnitude : magnitude;
+        var tick =
+            residual > 5
+                ? 10 * magnitude
+                : residual > 2
+                    ? 5 * magnitude
+                    : residual > 1
+                        ? 2 * magnitude
+                        : magnitude;
         return new AxisTick { Value = tick, Magnitude = magnitude };
     }
 
@@ -297,7 +345,11 @@ public static class Extensions
     /// <param name="properties">
     /// The properties, if this argument is not set then all the animatable properties in the object will use the given animation.
     /// </param>
-    public static void Animate(this IAnimatable animatable, Animation animation, params string[]? properties)
+    public static void Animate(
+        this IAnimatable animatable,
+        Animation animation,
+        params string[]? properties
+    )
     {
         animatable.SetTransition(animation, properties);
         animatable.CompleteTransition(properties);
@@ -312,7 +364,12 @@ public static class Extensions
     /// <param name="properties">
     /// The properties, if this argument is not set then all the animatable properties in the object will use the given animation.
     /// </param>
-    public static void Animate(this IAnimatable animatable, Func<float, float>? easingFunction, TimeSpan speed, params string[]? properties)
+    public static void Animate(
+        this IAnimatable animatable,
+        Func<float, float>? easingFunction,
+        TimeSpan speed,
+        params string[]? properties
+    )
     {
         Animate(animatable, new Animation(easingFunction, speed), properties);
     }
@@ -329,7 +386,11 @@ public static class Extensions
     /// <param name="properties">
     /// The properties, if this argument is not set then all the animatable properties in the object will use the given animation.
     /// </param>
-    public static void Animate<TDrawingContext>(this IAnimatable animatable, Chart<TDrawingContext> chart, params string[]? properties)
+    public static void Animate<TDrawingContext>(
+        this IAnimatable animatable,
+        Chart<TDrawingContext> chart,
+        params string[]? properties
+    )
         where TDrawingContext : DrawingContext
     {
         Animate(animatable, new Animation(chart.EasingFunction, chart.AnimationsSpeed), properties);
@@ -343,12 +404,17 @@ public static class Extensions
     /// <param name="visual">The visual.</param>
     /// <param name="animation">The animation.</param>
     /// <param name="properties">The properties.</param>
-    public static void Animate<TDrawingContext>(this VisualElement<TDrawingContext> visual, Animation animation, params string[]? properties)
+    public static void Animate<TDrawingContext>(
+        this VisualElement<TDrawingContext> visual,
+        Animation animation,
+        params string[]? properties
+    )
         where TDrawingContext : DrawingContext
     {
         foreach (var animatable in visual.GetDrawnGeometries())
         {
-            if (animatable is null) continue;
+            if (animatable is null)
+                continue;
             Animate(animatable, animation, properties);
         }
     }
@@ -363,7 +429,12 @@ public static class Extensions
     /// <param name="properties">
     /// The properties, if this argument is not set then all the animatable properties in the object will use the given animation.
     /// </param>
-    public static void Animate<TDrawingContext>(this VisualElement<TDrawingContext> visual, Func<float, float>? easingFunction, TimeSpan speed, params string[]? properties)
+    public static void Animate<TDrawingContext>(
+        this VisualElement<TDrawingContext> visual,
+        Func<float, float>? easingFunction,
+        TimeSpan speed,
+        params string[]? properties
+    )
         where TDrawingContext : DrawingContext
     {
         Animate(visual, new Animation(easingFunction, speed), properties);
@@ -382,7 +453,11 @@ public static class Extensions
     /// <param name="properties">
     /// The properties, if this argument is not set then all the animatable properties in the object will use the given animation.
     /// </param>
-    public static void Animate<TDrawingContext>(this VisualElement<TDrawingContext> visual, Chart<TDrawingContext> chart, params string[]? properties)
+    public static void Animate<TDrawingContext>(
+        this VisualElement<TDrawingContext> visual,
+        Chart<TDrawingContext> chart,
+        params string[]? properties
+    )
         where TDrawingContext : DrawingContext
     {
         Animate(visual, new Animation(chart.EasingFunction, chart.AnimationsSpeed), properties);
@@ -409,8 +484,10 @@ public static class Extensions
     /// </returns>
     public static bool IsColumnSeries(this ISeries series)
     {
-        return (series.SeriesProperties & (SeriesProperties.Bar | SeriesProperties.PrimaryAxisVerticalOrientation)) ==
-            (SeriesProperties.Bar | SeriesProperties.PrimaryAxisVerticalOrientation);
+        return (
+                series.SeriesProperties
+                & (SeriesProperties.Bar | SeriesProperties.PrimaryAxisVerticalOrientation)
+            ) == (SeriesProperties.Bar | SeriesProperties.PrimaryAxisVerticalOrientation);
     }
 
     /// <summary>
@@ -422,8 +499,10 @@ public static class Extensions
     /// </returns>
     public static bool IsRowSeries(this ISeries series)
     {
-        return (series.SeriesProperties & (SeriesProperties.Bar | SeriesProperties.PrimaryAxisHorizontalOrientation)) ==
-            (SeriesProperties.Bar | SeriesProperties.PrimaryAxisHorizontalOrientation);
+        return (
+                series.SeriesProperties
+                & (SeriesProperties.Bar | SeriesProperties.PrimaryAxisHorizontalOrientation)
+            ) == (SeriesProperties.Bar | SeriesProperties.PrimaryAxisHorizontalOrientation);
     }
 
     /// <summary>
@@ -435,7 +514,8 @@ public static class Extensions
     /// </returns>
     public static bool IsBoxSeries(this ISeries series)
     {
-        return (series.SeriesProperties & (SeriesProperties.BoxSeries)) == SeriesProperties.BoxSeries;
+        return (series.SeriesProperties & (SeriesProperties.BoxSeries))
+            == SeriesProperties.BoxSeries;
     }
 
     /// <summary>
@@ -510,22 +590,30 @@ public static class Extensions
     /// </summary>
     /// <param name="seriesCollection">The series collection.</param>
     /// <returns></returns>
-    public static TooltipFindingStrategy GetTooltipFindingStrategy(this IEnumerable<ISeries> seriesCollection)
+    public static TooltipFindingStrategy GetTooltipFindingStrategy(
+        this IEnumerable<ISeries> seriesCollection
+    )
     {
         var areAllX = true;
         var areAllY = true;
 
         foreach (var series in seriesCollection)
         {
-            areAllX = areAllX && (series.SeriesProperties & SeriesProperties.PrefersXStrategyTooltips) != 0;
-            areAllY = areAllY && (series.SeriesProperties & SeriesProperties.PrefersYStrategyTooltips) != 0;
+            areAllX =
+                areAllX
+                && (series.SeriesProperties & SeriesProperties.PrefersXStrategyTooltips) != 0;
+            areAllY =
+                areAllY
+                && (series.SeriesProperties & SeriesProperties.PrefersYStrategyTooltips) != 0;
         }
 
         return areAllX
             ? TooltipFindingStrategy.CompareOnlyXTakeClosest
-            : (areAllY
-                ? TooltipFindingStrategy.CompareOnlyYTakeClosest
-                : TooltipFindingStrategy.CompareAllTakeClosest);
+            : (
+                areAllY
+                    ? TooltipFindingStrategy.CompareOnlyYTakeClosest
+                    : TooltipFindingStrategy.CompareAllTakeClosest
+            );
     }
 
     /// <summary>
@@ -535,12 +623,12 @@ public static class Extensions
     /// <param name="point">The location in pixels.</param>
     /// <returns></returns>
     public static ChartPoint<TModel, TVisual, TLabel>? FindClosestTo<TModel, TVisual, TLabel>(
-        this IEnumerable<ChartPoint> points, LvcPoint point)
+        this IEnumerable<ChartPoint> points,
+        LvcPoint point
+    )
     {
         var closest = FindClosestTo(points, point);
-        return closest is null
-            ? null
-            : new ChartPoint<TModel, TVisual, TLabel>(closest);
+        return closest is null ? null : new ChartPoint<TModel, TVisual, TLabel>(closest);
     }
 
     /// <summary>
@@ -554,13 +642,10 @@ public static class Extensions
         var fp = new LvcPoint((float)point.X, (float)point.Y);
 
         return points
-            .Select(p => new
-            {
-                distance = p.DistanceTo(fp),
-                point = p
-            })
+            .Select(p => new { distance = p.DistanceTo(fp), point = p })
             .OrderBy(p => p.distance)
-            .FirstOrDefault()?.point;
+            .FirstOrDefault()
+            ?.point;
     }
 
     /// <summary>
@@ -570,7 +655,10 @@ public static class Extensions
     /// <param name="axis"></param>
     /// <param name="chart"></param>
     /// <returns></returns>
-    public static Scaler GetNextScaler<TDrawingContext>(this ICartesianAxis axis, CartesianChart<TDrawingContext> chart)
+    public static Scaler GetNextScaler<TDrawingContext>(
+        this ICartesianAxis axis,
+        CartesianChart<TDrawingContext> chart
+    )
         where TDrawingContext : DrawingContext
     {
         return new Scaler(chart.DrawMarginLocation, chart.DrawMarginSize, axis);
@@ -584,7 +672,10 @@ public static class Extensions
     /// <param name="axis"></param>
     /// <param name="chart"></param>
     /// <returns></returns>
-    public static Scaler? GetActualScaler<TDrawingContext>(this ICartesianAxis axis, CartesianChart<TDrawingContext> chart)
+    public static Scaler? GetActualScaler<TDrawingContext>(
+        this ICartesianAxis axis,
+        CartesianChart<TDrawingContext> chart
+    )
         where TDrawingContext : DrawingContext
     {
         return !axis.ActualBounds.HasPreviousState
@@ -597,7 +688,8 @@ public static class Extensions
                 {
                     Max = axis.ActualBounds.MaxVisibleBound,
                     Min = axis.ActualBounds.MinVisibleBound
-                });
+                }
+            );
     }
 
     /// <summary>
@@ -608,7 +700,10 @@ public static class Extensions
     /// <param name="source">The source enumeration.</param>
     /// <param name="predicate">The mapping predicate.</param>
     /// <returns></returns>
-    public static IEnumerable<T1> SelectFirst<T, T1>(this IEnumerable<T> source, Func<T, T1> predicate)
+    public static IEnumerable<T1> SelectFirst<T, T1>(
+        this IEnumerable<T> source,
+        Func<T, T1> predicate
+    )
     {
         foreach (var item in source)
         {
@@ -623,7 +718,10 @@ public static class Extensions
     /// <param name="dictionary">The points dictionary.</param>
     /// <param name="view">The view.</param>
     /// <returns></returns>
-    public static ChartPoint? GetPointForView(this Dictionary<IChartView, ChartPoint> dictionary, IChartView view)
+    public static ChartPoint? GetPointForView(
+        this Dictionary<IChartView, ChartPoint> dictionary,
+        IChartView view
+    )
     {
         return dictionary.TryGetValue(view, out var point) ? point : null;
     }
@@ -636,10 +734,12 @@ public static class Extensions
     /// <returns></returns>
     public static IEnumerable<IEnumerable<ChartPoint>> SplitByNullGaps(
         this IEnumerable<ChartPoint> points,
-        Action<ChartPoint> onDeleteNullPoint)
+        Action<ChartPoint> onDeleteNullPoint
+    )
     {
         using var builder = new GapsBuilder(points.GetEnumerator());
-        while (!builder.Finished) yield return YieldReturnUntilNextNullChartPoint(builder, onDeleteNullPoint);
+        while (!builder.Finished)
+            yield return YieldReturnUntilNextNullChartPoint(builder, onDeleteNullPoint);
     }
 
     /// <summary>
@@ -651,7 +751,8 @@ public static class Extensions
     {
         using var e = source.Where(x => !x.IsEmpty).GetEnumerator();
 
-        if (!e.MoveNext()) yield break;
+        if (!e.MoveNext())
+            yield break;
         var data = new SplineData(e.Current);
 
         if (!e.MoveNext())
@@ -683,12 +784,14 @@ public static class Extensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool CanBeNull(Type type)
     {
-        return !type.IsValueType || (type.IsGenericType && type.GetGenericTypeDefinition() == s_nullableType);
+        return !type.IsValueType
+            || (type.IsGenericType && type.GetGenericTypeDefinition() == s_nullableType);
     }
 
     private static IEnumerable<ChartPoint> YieldReturnUntilNextNullChartPoint(
         GapsBuilder builder,
-        Action<ChartPoint> onDeleteNullPoint)
+        Action<ChartPoint> onDeleteNullPoint
+    )
     {
         while (builder.Enumerator.MoveNext())
         {
@@ -697,7 +800,8 @@ public static class Extensions
                 var wasEmpty = builder.IsEmpty;
                 builder.IsEmpty = true;
                 onDeleteNullPoint(builder.Enumerator.Current);
-                if (!wasEmpty) yield break; // if there are no points then do not return an empty enumerable...
+                if (!wasEmpty)
+                    yield break; // if there are no points then do not return an empty enumerable...
             }
             else
             {
