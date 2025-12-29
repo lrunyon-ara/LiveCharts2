@@ -1,12 +1,10 @@
 # LiveCharts2
 
-[![CodeFactor](https://www.codefactor.io/repository/github/beto-rodriguez/livecharts2/badge)](https://www.codefactor.io/repository/github/beto-rodriguez/livecharts2)
-![Unit tests](https://github.com/beto-rodriguez/LiveCharts2/actions/workflows/run-unit-tests.yml/badge.svg)
-![SkiaSharp Views](https://github.com/beto-rodriguez/LiveCharts2/actions/workflows/compile-all-views.yml/badge.svg)
-
-[Watch Blazor WASM demo](https://blazor-livecharts.controli.app/) (only designed for desktop devices for now)
-
 LiveCharts2 (v2) is the evolution of [LiveCharts](https://github.com/Live-Charts/Live-Charts) (v0), it fixes the main design issues of its predecessor, it's focused to run everywhere, improves flexibility without losing what we already had in v0.
+
+### Applied Research Associates Note:
+
+Repo forked to test tripartite chart capability -- go to tripartiteChart branch to see more
 
 ### Extremely flexible data visualization library
 
