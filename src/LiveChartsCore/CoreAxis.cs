@@ -275,6 +275,8 @@ public abstract class CoreAxis<TDrawingContext, TTextGeometry, TLineGeometry>
     /// <inheritdoc cref="ICartesianAxis{TDrawingContext}.CrosshairPadding"/>
     public Padding? CrosshairPadding { get; set; }
 
+    public double? LogBase => _logBase;
+
     /// <inheritdoc cref="ICartesianAxis{TDrawingContext}.CrosshairSnapEnabled" />
     public bool CrosshairSnapEnabled { get => _crosshairSnapEnabled; set => SetProperty(ref _crosshairSnapEnabled, value); }
 
