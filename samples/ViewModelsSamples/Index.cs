@@ -4,6 +4,7 @@ public static class Index
 {
     public static string[] Samples =
     {
+        "Tripartite/Basic",
         "Design/LinearGradients",
         "Design/RadialGradients",
 

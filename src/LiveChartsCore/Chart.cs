@@ -507,7 +507,7 @@ public abstract class Chart<TDrawingContext> : IChart
     /// <summary>
     /// Adds a visual element to the chart.
     /// </summary>
-    public void AddVisual(ChartElement<TDrawingContext> element)
+    public virtual void AddVisual(ChartElement<TDrawingContext> element)
     {
         element.Invalidate(this);
         element.RemoveOldPaints(View);
