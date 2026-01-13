@@ -23,7 +23,7 @@
 using LiveChartsCore.SkiaSharpView.Drawing;
 using LiveChartsCore.SkiaSharpView.Drawing.Geometries;
 
-namespace LiveChartsCore.SkiaSharpView;
+namespace LiveChartsCore.SkiaSharpView.WinForms;
 
 /// <summary>
 /// Defines the diagonal separtors (gridlines) of a tripartite chart.
