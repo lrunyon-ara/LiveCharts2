@@ -84,7 +84,7 @@ public abstract class DiagonalSeparators<TDrawingContext>
     /// Gets the paint tasks.
     /// </summary>
     /// <returns></returns>
-    internal override IPaint<TDrawingContext>?[] GetPaintTasks()
+    internal protected override IPaint<TDrawingContext>?[] GetPaintTasks()
     {
         return new[] { _diagonalSeparatorsPaint, _diagonalSubseparatorsPaint, _labelsPaint };
     }
